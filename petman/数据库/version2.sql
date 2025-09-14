@@ -162,7 +162,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`spec` (
   `barcode` INT NULL,
   `picture` VARCHAR(45) NULL,
   `总库存` INT NULL,
-  PRIMARY KEY (`specID`, `product_productID`),
+  PRIMARY KEY (`specID`),
   INDEX `fk_spec_detail_product1_idx` (`product_productID` ASC) VISIBLE,
   CONSTRAINT `fk_spec_detail_product1`
     FOREIGN KEY (`product_productID`)
@@ -184,7 +184,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`stock_in_detail` (
   `quantity` VARCHAR(45) NOT NULL,
   `price_in` INT NOT NULL,
   `product_date` VARCHAR(45) NOT NULL,
-  PRIMARY KEY (`stock_in_detail`, `stock_inID`),
+  PRIMARY KEY (`stock_in_detail`),
   INDEX `fk_stock_in_detail_stock_in1_idx` (`stock_inID` ASC) VISIBLE,
   INDEX `fk_stock_in_detail_spec1_idx` (`spec_specID` ASC) VISIBLE,
   CONSTRAINT `fk_stock_in_detail_stock_in1`
