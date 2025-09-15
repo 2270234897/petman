@@ -20,7 +20,12 @@ MYSQL_CONFIG = {
     'client_flag': CLIENT.MULTI_STATEMENTS,
 }
 
-@customers_bp.route('/', methods=['GET'])
+@customers_bp.route('/view')
+def customers():
+    return render_template('customers_html.html')  
+
+
+@customers_bp.route('/get', methods=['GET'])
 def get_customers():
     try:
         # 创建数据库连接
@@ -152,7 +157,7 @@ def delete_customer(customer_id):
         if 'connection' in locals():
             connection.close()
 
-@customers_bp.route('/<int:customer_id>', methods=['PUT'])
+@customers_bp.route('/put/<int:customer_id>', methods=['PUT'])
 def update_customer(customer_id):
     try:
         # 从请求中获取更新后的客户信息

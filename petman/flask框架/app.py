@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template
 from pets import pets_bp
-from customers import customers_bp
+from customers_py import customers_bp
 
 app = Flask(__name__,
     template_folder='templates',  # 如果不叫templates，需要指定

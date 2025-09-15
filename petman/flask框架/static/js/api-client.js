@@ -2,6 +2,7 @@ const API_CONFIG = {
     baseURL: 'http://localhost:5000/api',
     endpoints: {
         customers: '/customers',
+        customers_get: '/customers/get',
         pets: '/pets',
         pets_post: '/pets/post',
         pets_put: '/pets/put/',
@@ -54,8 +55,30 @@ window.petsAPI = {
 };
 
 window.customersAPI = {
+    // 获取所有客户
     getAll: function() {
-        return apiRequest('GET', API_CONFIG.endpoints.customers);
-    }
+        return apiRequest('GET', API_CONFIG.endpoints.customers_get);
+    },
+    
+    // // 获取单个客户详情
+    // getById: function(id) {
+    //     return apiRequest('GET', `${API_CONFIG.endpoints.customers}/${id}`);
+    // },
+    
+    // 创建新客户
+    create: function(customerData) {
+        return apiRequest('POST', API_CONFIG.endpoints.customers, customerData);
+    },
+    
+    // 更新客户信息
+    update: function(id, updateData) {
+        return apiRequest('PUT', `${API_CONFIG.endpoints.customers}/${id}`, updateData);
+    },
+    
+    // 删除客户
+    delete: function(id) {
+        return apiRequest('DELETE', `${API_CONFIG.endpoints.customers}/${id}`);
+    },
+
 };
 

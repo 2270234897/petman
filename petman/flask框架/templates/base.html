@@ -17,8 +17,10 @@
             <p>宠物店管理系统</p>
         </div>
         <ul class="nav-menu">
+            <!-- {{ url_for('customers.customers') }}中第一个customers是蓝图的名字，第二个customers是视图函数的名字 -->
+            <li><a href="{{ url_for('customers.customers') }}" ><i class="fas fa-users"></i> 客户管理</a></li>
 
-            <li><a href="{{ url_for('pets.pets') }}" class="active"><i class="fas fa-paw"></i> 宠物管理</a></li>
+            <li><a href="{{ url_for('pets.pets') }}"><i class="fas fa-paw"></i> 宠物管理</a></li>
         </ul>
     </div>
     
