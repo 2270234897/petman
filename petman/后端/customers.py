@@ -5,8 +5,11 @@ from flask import Flask, jsonify, request
 import pymysql
 from pymysql.cursors import DictCursor
 from pymysql.constants import CLIENT
+from pets import pets_bp
+
 
 app = Flask(__name__)
+app.register_blueprint(pets_bp)
 
 # MySQL 数据库配置
 MYSQL_CONFIG = {
