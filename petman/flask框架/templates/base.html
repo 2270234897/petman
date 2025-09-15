@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}宠物店管理系统{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">
+            <h2>萌宠小屋</h2>
+            <p>宠物店管理系统</p>
+        </div>
+        <ul class="nav-menu">
+
+            <li><a href="{{ url_for('pets.pets') }}" class="active"><i class="fas fa-paw"></i> 宠物管理</a></li>
+        </ul>
+    </div>
+    
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- 全局脚本 -->
+</body>
+</html>
