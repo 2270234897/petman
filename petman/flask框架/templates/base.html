@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}宠物店管理系统{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    
+    <!-- 新增导航栏样式 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
