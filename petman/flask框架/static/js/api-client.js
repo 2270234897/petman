@@ -11,11 +11,16 @@ const API_CONFIG = {
     }
 };
 
-
-
 // 使用函数表达式而不是箭头函数确保兼容性
-function apiRequest(method, endpoint, data) {
-    const url = API_CONFIG.baseURL + endpoint;
+function apiRequest(method, endpoint, data = null, params = {}) {
+    let url = API_CONFIG.baseURL + endpoint;
+    
+    // 处理查询参数
+    if (params && Object.keys(params).length > 0) {
+        const queryString = new URLSearchParams(params).toString();
+        url += '?' + queryString;
+    }
+    
     return fetch(url, {
         method: method,
         headers: {
@@ -33,7 +38,6 @@ function apiRequest(method, endpoint, data) {
         }
         return response.json();
     });
-    
 }
 
 window.petsAPI = {
@@ -60,11 +64,6 @@ window.customersAPI = {
         return apiRequest('GET', API_CONFIG.endpoints.customers_get);
     },
     
-    // // 获取单个客户详情
-    // getById: function(id) {
-    //     return apiRequest('GET', `${API_CONFIG.endpoints.customers}/${id}`);
-    // },
-    
     // 创建新客户
     create: function(customerData) {
         return apiRequest('POST', API_CONFIG.endpoints.customers, customerData);
@@ -78,7 +77,55 @@ window.customersAPI = {
     // 删除客户
     delete: function(id) {
         return apiRequest('DELETE', `${API_CONFIG.endpoints.customers}/${id}`);
-    },
-
+    }
 };
 
+// 在api-client.js中添加预约API模块
+window.appointmentsAPI = {
+    // 获取所有预约（可筛选）
+    getAll: function(params = {}) {
+        return apiRequest('GET', '/appointments/get', null, params);
+    },
+    
+    // 创建新预约
+    create: function(appointmentData) {
+        return apiRequest('POST', '/appointments/post', appointmentData);
+    },
+    
+    // 更新预约信息
+    update: function(id, updateData) {
+        return apiRequest('PUT', `/appointments/put/${id}`, updateData);
+    },
+    
+    // 删除预约
+    delete: function(id) {
+        return apiRequest('DELETE', `/appointments/delete/${id}`);
+    },
+    
+    // 变更预约状态
+    updateStatus: function(id, newStatus) {
+        return apiRequest('PUT', `/appointments/status/${id}`, { status: newStatus });
+    }
+};
+
+window.servicesAPI = {
+    // 获取所有服务项目
+    getAll: function() {
+        return apiRequest('GET', '/appointments/services/get');
+    },
+    
+    // 创建新服务
+    create: function(serviceData) {
+        return apiRequest('POST', '/appointments/services/post', serviceData);
+    },
+    
+    // 更新服务信息
+    update: function(id, updateData) {
+        return apiRequest('PUT', `/appointments/services/put/${id}`, updateData);
+    },
+    
+    // 删除服务
+    delete: function(id) {
+        return apiRequest('DELETE', `/appointments/services/delete/${id}`);
+    }
+};

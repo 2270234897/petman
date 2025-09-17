@@ -240,3 +240,33 @@ def delete_pet(pet_id):
     finally:
         if connection:
             connection.close()
+
+# 获取客户的所有宠物
+@pets_bp.route('/customer/<int:customer_id>', methods=['GET'])
+def get_pets_by_customer(customer_id):
+    try:
+        connection = pymysql.connect(**MYSQL_CONFIG)
+        
+        with connection.cursor() as cursor:
+            sql = """
+            SELECT p.* 
+            FROM pets p
+            WHERE p.customers_customerID = %s
+            """
+            cursor.execute(sql, (customer_id,))
+            pets = cursor.fetchall()
+            
+            return jsonify({
+                'status': 'success',
+                'data': pets
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+        
+    finally:
+        if 'connection' in locals():
+            connection.close()
