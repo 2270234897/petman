@@ -192,8 +192,9 @@ export const useCreateInventoryItem = () => {
       queryClient.invalidateQueries({ queryKey: ["inventory"] })
       toast.success("商品添加成功！")
     },
-    onError: () => {
-      toast.error("商品添加失败，请重试")
+    onError: (error: any) => {
+      console.error("商品添加失败:", error);
+      toast.error(error.response?.data?.message || "商品添加失败，请重试")
     },
   })
 }

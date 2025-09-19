@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Plus, Edit, Trash2 } from "lucide-react"
+import { Plus, Edit, Trash2, Folder, File } from "lucide-react"
 import api from "@/lib/api-client"
 
 // 定义分类数据类型
@@ -81,6 +81,7 @@ export function ClassifyManager() {
   const [editingClassify, setEditingClassify] = useState<Classify | null>(null)
   const [name, setName] = useState("")
   const [parentID, setParentID] = useState<number | undefined>(undefined)
+  const [selectedClassify, setSelectedClassify] = useState<Classify | null>(null)
   const queryClient = useQueryClient()
 
   const { data: classifyData, isLoading, isError } = useClassify()
@@ -89,7 +90,35 @@ export function ClassifyManager() {
   const deleteMutation = useDeleteClassify()
 
   // 获取所有分类数据
-  const classifyList = classifyData?.data || []
+  const flatClassifyList: Classify[] = classifyData?.data || []
+
+  // 按层级分组分类
+  const level1Classifications = flatClassifyList.filter((c: Classify) => !c.parentID)
+  const level2Classifications = flatClassifyList.filter((c: Classify) => 
+    c.parentID && level1Classifications.some((l1: Classify) => l1.classify1_ID === c.parentID)
+  )
+  const level3Classifications = flatClassifyList.filter((c: Classify) => 
+    c.parentID && level2Classifications.some((l2: Classify) => l2.classify1_ID === c.parentID)
+  )
+
+  // 检查分类是否为二级分类（直接隶属于一级分类）
+  const isLevel2Classify = (classify: Classify) => {
+    return level1Classifications.some((l1: Classify) => l1.classify1_ID === classify.parentID)
+  }
+
+  // 检查分类是否为三级分类（直接隶属于二级分类）
+  const isLevel3Classify = (classify: Classify) => {
+    return level2Classifications.some((l2: Classify) => l2.classify1_ID === classify.parentID)
+  }
+
+  // 重新计算二级和三级分类（更准确的计算方式）
+  const recomputeLevel2Classifications = flatClassifyList.filter((c: Classify) => 
+    c.parentID && isLevel2Classify(c)
+  )
+  
+  const recomputeLevel3Classifications = flatClassifyList.filter((c: Classify) => 
+    c.parentID && isLevel3Classify(c)
+  )
 
   // 重置表单
   const resetForm = () => {
@@ -138,24 +167,40 @@ export function ClassifyManager() {
   }
 
   // 编辑分类
-  const handleEdit = (classify: Classify) => {
-    setEditingClassify(classify)
-    setName(classify.name)
-    setParentID(classify.parentID)
+  const handleEdit = () => {
+    if (!selectedClassify) {
+      toast.error("请先选择要编辑的分类")
+      return
+    }
+    
+    setEditingClassify(selectedClassify)
+    setName(selectedClassify.name)
+    setParentID(selectedClassify.parentID)
     setIsDialogOpen(true)
   }
 
   // 删除分类
-  const handleDelete = (id: number) => {
-    if (confirm("确定要删除这个分类吗？此操作不可恢复。")) {
-      deleteMutation.mutate(id, {
+  const handleDelete = () => {
+    if (!selectedClassify) {
+      toast.error("请先选择要删除的分类")
+      return
+    }
+    
+    if (confirm(`确定要删除分类"${selectedClassify.name}"吗？此操作不可恢复。`)) {
+      deleteMutation.mutate(selectedClassify.classify1_ID, {
         onSuccess: () => {
-          if (editingClassify && editingClassify.classify1_ID === id) {
+          setSelectedClassify(null)
+          if (editingClassify && editingClassify.classify1_ID === selectedClassify.classify1_ID) {
             resetForm()
           }
         }
       })
     }
+  }
+
+  // 选择分类
+  const handleSelectClassify = (classify: Classify) => {
+    setSelectedClassify(classify)
   }
 
   if (isLoading) {
@@ -175,124 +220,226 @@ export function ClassifyManager() {
             管理商品分类信息
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => resetForm()}>
-              <Plus className="mr-2 h-4 w-4" />
-              添加分类
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingClassify ? "编辑分类" : "添加分类"}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">分类名称 *</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="请输入分类名称"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="parentID">父级分类</Label>
-                <Select 
-                  value={parentID?.toString() || ""} 
-                  onValueChange={(value) => setParentID(value ? parseInt(value) : undefined)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择父级分类（可选）" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">无父级分类</SelectItem>
-                    {classifyList
-                      .filter((c: Classify) => !editingClassify || c.classify1_ID !== editingClassify.classify1_ID)
-                      .map((classify: Classify) => (
-                        <SelectItem 
-                          key={classify.classify1_ID} 
-                          value={classify.classify1_ID.toString()}
-                        >
-                          {classify.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  取消
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                >
-                  {createMutation.isPending || updateMutation.isPending ? "保存中..." : "保存"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex space-x-2">
+          <Button 
+            onClick={handleEdit}
+            disabled={!selectedClassify}
+          >
+            <Edit className="mr-2 h-4 w-4" />
+            编辑分类
+          </Button>
+          <Button 
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={!selectedClassify}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            删除分类
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => resetForm()}>
+                <Plus className="mr-2 h-4 w-4" />
+                添加分类
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {editingClassify ? "编辑分类" : "添加分类"}
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">分类名称 *</Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="请输入分类名称"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="parentID">父级分类</Label>
+                  <Select 
+                    value={parentID?.toString() || "0"} 
+                    onValueChange={(value) => setParentID(value === "0" ? undefined : parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择父级分类（可选）" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">无父级分类</SelectItem>
+                      {flatClassifyList
+                        .filter((c: Classify) => !editingClassify || c.classify1_ID !== editingClassify.classify1_ID)
+                        .map((classify: Classify) => (
+                          <SelectItem 
+                            key={classify.classify1_ID} 
+                            value={classify.classify1_ID.toString()}
+                          >
+                            {classify.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsDialogOpen(false)}
+                  >
+                    取消
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                  >
+                    {createMutation.isPending || updateMutation.isPending ? "保存中..." : "保存"}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>分类列表</CardTitle>
-          <CardDescription>
-            管理所有商品分类
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {classifyList?.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              暂无分类数据
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {classifyList.map((classify: Classify) => (
-                <Card key={classify.classify1_ID} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* 一级分类 */}
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Folder className="mr-2 h-5 w-5 text-blue-500" />
+                一级分类
+              </CardTitle>
+              <CardDescription>
+                {level1Classifications.length} 个分类
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="max-h-96 overflow-y-auto">
+              {level1Classifications.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  暂无一级分类
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {level1Classifications.map((classify: Classify) => (
+                    <div 
+                      key={classify.classify1_ID}
+                      className={`p-3 rounded-lg cursor-pointer transition-colors flex justify-between items-center ${
+                        selectedClassify?.classify1_ID === classify.classify1_ID 
+                          ? "bg-blue-100 dark:bg-blue-900 border border-blue-300" 
+                          : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                      onClick={() => handleSelectClassify(classify)}
+                    >
+                      <span className="font-medium">{classify.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 二级分类 */}
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Folder className="mr-2 h-5 w-5 text-green-500" />
+                二级分类
+              </CardTitle>
+              <CardDescription>
+                {recomputeLevel2Classifications.length} 个分类
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="max-h-96 overflow-y-auto">
+              {recomputeLevel2Classifications.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  暂无二级分类
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {recomputeLevel2Classifications.map((classify: Classify) => (
+                    <div 
+                      key={classify.classify1_ID}
+                      className={`p-3 rounded-lg cursor-pointer transition-colors flex justify-between items-center ${
+                        selectedClassify?.classify1_ID === classify.classify1_ID 
+                          ? "bg-green-100 dark:bg-green-900 border border-green-300" 
+                          : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                      onClick={() => handleSelectClassify(classify)}
+                    >
                       <div>
-                        <h3 className="font-semibold">{classify.name}</h3>
-                        {classify.parent_name && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            父级: {classify.parent_name}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleEdit(classify)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDelete(classify.classify1_ID)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <span className="font-medium">{classify.name}</span>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          父级: {classify.parent_name}
+                        </p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 三级分类 */}
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <File className="mr-2 h-5 w-5 text-purple-500" />
+                三级分类
+              </CardTitle>
+              <CardDescription>
+                {recomputeLevel3Classifications.length} 个分类
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="max-h-96 overflow-y-auto">
+              {recomputeLevel3Classifications.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  暂无三级分类
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {recomputeLevel3Classifications.map((classify: Classify) => (
+                    <div 
+                      key={classify.classify1_ID}
+                      className={`p-3 rounded-lg cursor-pointer transition-colors flex justify-between items-center ${
+                        selectedClassify?.classify1_ID === classify.classify1_ID 
+                          ? "bg-purple-100 dark:bg-purple-900 border border-purple-300" 
+                          : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                      onClick={() => handleSelectClassify(classify)}
+                    >
+                      <div>
+                        <span className="font-medium">{classify.name}</span>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          父级: {classify.parent_name}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      
+      {selectedClassify && (
+        <div className="fixed bottom-4 right-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border">
+          <p className="font-medium">当前选中分类:</p>
+          <p className="text-sm">{selectedClassify.name}</p>
+          {selectedClassify.parent_name && (
+            <p className="text-xs text-muted-foreground">父级: {selectedClassify.parent_name}</p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      )}
     </div>
   )
 }

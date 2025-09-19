@@ -1,0 +1,28 @@
+<!-- templates/modals/classify_modal.html -->
+<div id="classifyModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">添加/编辑分类</h2>
+            <span class="close" onclick="closeModal('classifyModal')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="classify-form">
+                <input type="hidden" id="classify-id">
+                <div class="form-group">
+                    <label for="classify-name">分类名称：</label>
+                    <input type="text" id="classify-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="classify-parent">父级分类：</label>
+                    <select id="classify-parent">
+                        <option value="">无</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('classifyModal')">取消</button>
+                    <button type="submit" class="btn btn-success">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

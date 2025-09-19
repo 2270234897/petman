@@ -11,6 +11,8 @@ import { Inventory } from "@/pages/inventory"
 import { InventoryProducts } from "@/pages/inventory/products"
 import { InventoryStock } from "@/pages/inventory/stock"
 import { Classify } from "@/pages/inventory/classify"
+import { Brands } from "@/pages/inventory/brands"
+import { Dealers } from "@/pages/inventory/dealers"
 import { Toaster } from "sonner"
 
 function App() {
@@ -27,6 +29,8 @@ function App() {
             <Route path="/inventory/products" element={<InventoryProducts />} />
             <Route path="/inventory/stock" element={<InventoryStock />} />
             <Route path="/inventory/classify" element={<Classify />} />
+            <Route path="/inventory/brands" element={<Brands />} />
+            <Route path="/inventory/dealers" element={<Dealers />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -1,0 +1,30 @@
+<!-- templates/modals/dealer_modal.html -->
+<div id="dealerModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">添加/编辑经销商</h2>
+            <span class="close" onclick="closeModal('dealerModal')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="dealer-form">
+                <input type="hidden" id="dealer-id">
+                <div class="form-group">
+                    <label for="dealer-name">经销商名称：</label>
+                    <input type="text" id="dealer-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="dealer-tel">电话：</label>
+                    <input type="text" id="dealer-tel" required>
+                </div>
+                <div class="form-group">
+                    <label for="dealer-address">地址：</label>
+                    <input type="text" id="dealer-address" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('dealerModal')">取消</button>
+                    <button type="submit" class="btn btn-success">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

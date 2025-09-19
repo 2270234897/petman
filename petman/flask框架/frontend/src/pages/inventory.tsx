@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Package, Tag, ArrowDownToLine } from "lucide-react"
+import { Package, Tag, ArrowDownToLine, Copyright, Truck } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 export function Inventory() {
@@ -17,7 +17,7 @@ export function Inventory() {
       </div>
 
       {/* Navigation Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
         {/* 商品及规格管理 */}
         <Card 
           className="vibrant-card-blue border-2 cursor-pointer hover:shadow-lg transition-shadow"
@@ -71,6 +71,66 @@ export function Inventory() {
                 size="sm" 
                 className="btn-vibrant-green"
                 onClick={() => navigate("/inventory/classify")}
+              >
+                进入管理
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 品牌管理 */}
+        <Card 
+          className="vibrant-card-yellow border-2 cursor-pointer hover:shadow-lg transition-shadow"
+        >
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Copyright className="h-6 w-6 mr-2" />
+              品牌管理
+            </CardTitle>
+            <CardDescription>
+              管理商品品牌信息
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              管理商品品牌信息，包括品牌名称和描述。
+            </p>
+            <div className="mt-4 flex justify-end">
+              <Button 
+                variant="default" 
+                size="sm" 
+                className="btn-vibrant-yellow"
+                onClick={() => navigate("/inventory/brands")}
+              >
+                进入管理
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 经销商管理 */}
+        <Card 
+          className="vibrant-card-orange border-2 cursor-pointer hover:shadow-lg transition-shadow"
+        >
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Truck className="h-6 w-6 mr-2" />
+              经销商管理
+            </CardTitle>
+            <CardDescription>
+              管理商品经销商信息
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              管理商品经销商信息，包括经销商名称、联系方式和地址。
+            </p>
+            <div className="mt-4 flex justify-end">
+              <Button 
+                variant="default" 
+                size="sm" 
+                className="btn-vibrant-orange"
+                onClick={() => navigate("/inventory/dealers")}
               >
                 进入管理
               </Button>

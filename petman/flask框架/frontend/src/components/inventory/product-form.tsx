@@ -45,7 +45,14 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ initialData, brands, categories, onSubmit, onCancel }: ProductFormProps) {
-  const [specs, setSpecs] = useState<Array<{id: number, name: string, stock: number}>>([])
+  const [specs, setSpecs] = useState<Array<{
+    id: number, 
+    name: string, 
+    value?: string, 
+    stock: number, 
+    barcode?: string,
+    picture?: string
+  }>>([])
   
   // 只有在没有从父组件传递数据时才自己获取数据
   const { data: brandsData, isLoading: isLoadingBrands, isError: isErrorBrands } = useBrands()
@@ -61,10 +68,10 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       product_name: initialData?.product_name || "",
-      brand_id: initialData?.brand_id || undefined,
-      classify_id: initialData?.classify_id || undefined,
+      brand_id: initialData?.brand_id || initialData?.brand_brandID || undefined,
+      classify_id: initialData?.classify_id || initialData?.classify_level1_classify1_ID || undefined,
       product_baozhiqi: initialData?.product_baozhiqi ?? 12,
-      product_details: initialData?.product_details || "",
+      product_details: initialData?.product_details || initialData?.local || "",
     },
   })
   
@@ -72,19 +79,36 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
   useEffect(() => {
     if (initialData?.specs) {
       setSpecs(initialData.specs.map((spec: any) => ({
-        id: spec.specID,
-        name: spec.spec_name,
-        stock: spec.spec_stock || 0
+        id: spec.specID || spec.id || Date.now() + Math.random(),
+        name: spec.spec_name || spec.name || "",
+        value: spec.spec_value || spec.value || "",
+        stock: spec.总库存 || spec.spec_stock || spec.stock || 0,
+        barcode: spec.barcode || "",
+        picture: spec.picture || ""
       })))
     } else {
       // 默认添加一个空规格
-      setSpecs([{ id: Date.now(), name: "", stock: 0 }])
+      setSpecs([{ 
+        id: Date.now(), 
+        name: "", 
+        value: "",
+        stock: 0,
+        barcode: "",
+        picture: ""
+      }])
     }
   }, [initialData])
   
   // 添加新规格
   const addSpec = () => {
-    setSpecs([...specs, { id: Date.now(), name: "", stock: 0 }])
+    setSpecs([...specs, { 
+      id: Date.now(), 
+      name: "", 
+      value: "",
+      stock: 0,
+      barcode: "",
+      picture: ""
+    }])
   }
   
   // 更新规格
@@ -112,13 +136,32 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
       return
     }
     
+    // 验证所有规格字段
+    const incompleteSpecs = specs.filter(spec => 
+      spec.name.trim() && (spec.value === undefined || spec.stock === undefined)
+    )
+    if (incompleteSpecs.length > 0) {
+      toast.error("请完整填写所有规格信息")
+      return
+    }
+    
+    // 转换数据格式以匹配后端API期望的格式
     const productData = {
-      ...values,
+      product_name: values.product_name,
+      classify_level1_classify1_ID: values.classify_id,
+      product_baozhiqi: values.product_baozhiqi,
+      local: values.product_details || '',
+      brand_brandID: values.brand_id,
       specs: specs.map(spec => ({
         spec_name: spec.name,
-        spec_stock: spec.stock
+        spec_value: spec.value || '',
+        barcode: spec.barcode || 0,
+        picture: spec.picture || '',
+        总库存: spec.stock
       }))
     }
+    
+    console.log("发送到后端的数据:", productData); // 添加调试日志
     
     if (initialData) {
       // 更新商品
@@ -129,8 +172,9 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
             toast.success("商品更新成功")
             onSubmit(productData)
           },
-          onError: () => {
-            toast.error("商品更新失败")
+          onError: (error: any) => {
+            console.error("商品更新失败:", error);
+            toast.error(error.response?.data?.message || "商品更新失败，请重试")
           }
         }
       )
@@ -141,8 +185,9 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
           toast.success("商品创建成功")
           onSubmit(productData)
         },
-        onError: () => {
-          toast.error("商品创建失败")
+        onError: (error: any) => {
+          console.error("商品创建失败:", error);
+          toast.error(error.response?.data?.message || "商品创建失败，请重试")
         }
       })
     }
@@ -218,13 +263,13 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
                     </FormControl>
                     <SelectContent>
                       {availableBrands
-                        .filter((brand: any) => brand.brandID || brand.id)
+                        .filter((brand: any) => brand.brandID)
                         .map((brand: any) => (
                           <SelectItem 
-                            key={brand.brandID || brand.id || brand.name} 
-                            value={(brand.brandID || brand.id).toString()}
+                            key={brand.brandID} 
+                            value={brand.brandID.toString()}
                           >
-                            {brand.brandname || brand.name}
+                            {brand.brandname}
                           </SelectItem>
                         )
                       )}
@@ -252,13 +297,14 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
                     </FormControl>
                     <SelectContent>
                       {availableCategories
-                        .filter((category: any) => category.classifyID || category.id)
+                        .filter((category: any) => category.classify1_ID)
                         .map((category: any) => (
                           <SelectItem 
-                            key={category.classifyID || category.id || category.name} 
-                            value={(category.classifyID || category.id).toString()}
+                            key={category.classify1_ID} 
+                            value={category.classify1_ID.toString()}
                           >
-                            {category.classify_name || category.name}
+                            {category.name}
+                            {category.parent_name && ` (${category.parent_name})`}
                           </SelectItem>
                         )
                       )}
@@ -320,7 +366,7 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
             
             {specs.map((spec, index) => (
               <div key={spec.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border rounded-lg">
-                <div className="md:col-span-5">
+                <div className="md:col-span-3">
                   <label className="text-sm font-medium">规格名称</label>
                   <Input
                     value={spec.name}
@@ -328,24 +374,49 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
                     placeholder="如: 500g/袋"
                   />
                 </div>
-                <div className="md:col-span-5">
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium">规格值</label>
+                  <Input
+                    value={spec.value || ''}
+                    onChange={(e) => updateSpec(spec.id, "value", e.target.value)}
+                    placeholder="如: 500g"
+                  />
+                </div>
+                <div className="md:col-span-2">
                   <label className="text-sm font-medium">初始库存</label>
                   <Input
                     type="number"
                     min="0"
                     value={spec.stock}
                     onChange={(e) => updateSpec(spec.id, "stock", Number(e.target.value))}
-                    placeholder="请输入初始库存"
+                    placeholder="库存数量"
                   />
                 </div>
-                <div className="md:col-span-2 flex items-end">
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium">条形码</label>
+                  <Input
+                    type="number"
+                    value={spec.barcode || ''}
+                    onChange={(e) => updateSpec(spec.id, "barcode", e.target.value)}
+                    placeholder="条形码"
+                  />
+                </div>
+                <div className="md:col-span-3">
+                  <label className="text-sm font-medium">图片链接</label>
+                  <Input
+                    value={spec.picture || ''}
+                    onChange={(e) => updateSpec(spec.id, "picture", e.target.value)}
+                    placeholder="图片URL"
+                  />
+                </div>
+                <div className="md:col-span-12 flex items-end">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => removeSpec(spec.id)}
                     disabled={specs.length <= 1}
                   >
-                    删除
+                    删除规格
                   </Button>
                 </div>
               </div>
