@@ -17,7 +17,7 @@ export function Inventory() {
       </div>
 
       {/* Navigation Cards */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* 商品及规格管理 */}
         <Card 
           className="vibrant-card-blue border-2 cursor-pointer hover:shadow-lg transition-shadow"
@@ -41,6 +41,36 @@ export function Inventory() {
                 size="sm" 
                 className="btn-vibrant-blue"
                 onClick={() => navigate("/inventory/products")}
+              >
+                进入管理
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 分类管理 */}
+        <Card 
+          className="vibrant-card-green border-2 cursor-pointer hover:shadow-lg transition-shadow"
+        >
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Tag className="h-6 w-6 mr-2" />
+              分类管理
+            </CardTitle>
+            <CardDescription>
+              管理商品分类信息
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              管理商品分类和子分类，建立清晰的商品分类体系。
+            </p>
+            <div className="mt-4 flex justify-end">
+              <Button 
+                variant="default" 
+                size="sm" 
+                className="btn-vibrant-green"
+                onClick={() => navigate("/inventory/classify")}
               >
                 进入管理
               </Button>

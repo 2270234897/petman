@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/select"
 import { useBrands, useClassify, useCreateInventoryItem, useUpdateProduct } from "@/hooks/useApi"
 import { toast } from "sonner"
+import { Controller } from "react-hook-form"
+import { Loader2 } from "lucide-react"
 
 const productFormSchema = z.object({
   product_name: z.string().min(1, "商品名称不能为空"),
@@ -36,20 +38,24 @@ type ProductFormValues = z.infer<typeof productFormSchema>
 
 interface ProductFormProps {
   initialData?: any
-  onSubmit: () => void
+  brands?: any[]
+  categories?: any[]
+  onSubmit: (data: any) => void
   onCancel: () => void
 }
 
-export function ProductForm({ initialData, onSubmit, onCancel }: ProductFormProps) {
+export function ProductForm({ initialData, brands, categories, onSubmit, onCancel }: ProductFormProps) {
   const [specs, setSpecs] = useState<Array<{id: number, name: string, stock: number}>>([])
   
-  const { data: brandsData } = useBrands()
-  const { data: classifyData } = useClassify()
+  // 只有在没有从父组件传递数据时才自己获取数据
+  const { data: brandsData, isLoading: isLoadingBrands, isError: isErrorBrands } = useBrands()
+  const { data: classifyData, isLoading: isLoadingClassify, isError: isErrorClassify } = useClassify()
   const { mutate: createProduct } = useCreateInventoryItem()
   const { mutate: updateProduct } = useUpdateProduct()
   
-  const brands = brandsData?.data || []
-  const categories = classifyData?.data || []
+  // 使用从父组件传递的数据，或者自己获取的数据
+  const availableBrands = brands || brandsData?.data || []
+  const availableCategories = categories || classifyData?.data || []
   
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
@@ -57,7 +63,7 @@ export function ProductForm({ initialData, onSubmit, onCancel }: ProductFormProp
       product_name: initialData?.product_name || "",
       brand_id: initialData?.brand_id || undefined,
       classify_id: initialData?.classify_id || undefined,
-      product_baozhiqi: initialData?.product_baozhiqi || 12,
+      product_baozhiqi: initialData?.product_baozhiqi ?? 12,
       product_details: initialData?.product_details || "",
     },
   })
@@ -121,7 +127,7 @@ export function ProductForm({ initialData, onSubmit, onCancel }: ProductFormProp
         {
           onSuccess: () => {
             toast.success("商品更新成功")
-            onSubmit()
+            onSubmit(productData)
           },
           onError: () => {
             toast.error("商品更新失败")
@@ -133,13 +139,37 @@ export function ProductForm({ initialData, onSubmit, onCancel }: ProductFormProp
       createProduct(productData, {
         onSuccess: () => {
           toast.success("商品创建成功")
-          onSubmit()
+          onSubmit(productData)
         },
         onError: () => {
           toast.error("商品创建失败")
         }
       })
     }
+  }
+  
+  // 检查是否正在加载数据
+  if (isLoadingBrands || isLoadingClassify) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
+        <span className="ml-2 text-muted-foreground">加载基础数据中...</span>
+      </div>
+    )
+  }
+  
+  // 检查是否有错误
+  if (isErrorBrands || isErrorClassify) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <p className="text-red-500 mb-2">加载基础数据失败</p>
+          <Button onClick={() => { window.location.reload() }}>
+            重新加载
+          </Button>
+        </div>
+      </div>
+    )
   }
   
   return (
@@ -157,9 +187,9 @@ export function ProductForm({ initialData, onSubmit, onCancel }: ProductFormProp
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           {/* 商品基本信息 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
+            <Controller
               name="product_name"
+              control={form.control}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>商品名称</FormLabel>
@@ -171,15 +201,15 @@ export function ProductForm({ initialData, onSubmit, onCancel }: ProductFormProp
               )}
             />
             
-            <FormField
-              control={form.control}
+            <Controller
               name="brand_id"
+              control={form.control}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>品牌</FormLabel>
                   <Select 
-                    onValueChange={(value) => field.onChange(Number(value))} 
-                    defaultValue={field.value?.toString()}
+                    onValueChange={(value) => field.onChange(Number(value))}
+                    value={field.value ? field.value.toString() : ""}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -187,11 +217,17 @@ export function ProductForm({ initialData, onSubmit, onCancel }: ProductFormProp
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {brands.map((brand: any) => (
-                        <SelectItem key={brand.brandID} value={brand.brandID.toString()}>
-                          {brand.brandname}
-                        </SelectItem>
-                      ))}
+                      {availableBrands
+                        .filter((brand: any) => brand.brandID || brand.id)
+                        .map((brand: any) => (
+                          <SelectItem 
+                            key={brand.brandID || brand.id || brand.name} 
+                            value={(brand.brandID || brand.id).toString()}
+                          >
+                            {brand.brandname || brand.name}
+                          </SelectItem>
+                        )
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -199,15 +235,15 @@ export function ProductForm({ initialData, onSubmit, onCancel }: ProductFormProp
               )}
             />
             
-            <FormField
-              control={form.control}
+            <Controller
               name="classify_id"
+              control={form.control}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>分类</FormLabel>
                   <Select 
-                    onValueChange={(value) => field.onChange(Number(value))} 
-                    defaultValue={field.value?.toString()}
+                    onValueChange={(value) => field.onChange(Number(value))}
+                    value={field.value ? field.value.toString() : ""}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -215,14 +251,17 @@ export function ProductForm({ initialData, onSubmit, onCancel }: ProductFormProp
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {categories.map((category: any) => (
-                        <SelectItem 
-                          key={category.classifyID} 
-                          value={category.classifyID.toString()}
-                        >
-                          {category.classify_name}
-                        </SelectItem>
-                      ))}
+                      {availableCategories
+                        .filter((category: any) => category.classifyID || category.id)
+                        .map((category: any) => (
+                          <SelectItem 
+                            key={category.classifyID || category.id || category.name} 
+                            value={(category.classifyID || category.id).toString()}
+                          >
+                            {category.classify_name || category.name}
+                          </SelectItem>
+                        )
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -230,9 +269,9 @@ export function ProductForm({ initialData, onSubmit, onCancel }: ProductFormProp
               )}
             />
             
-            <FormField
-              control={form.control}
+            <Controller
               name="product_baozhiqi"
+              control={form.control}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>保质期 (月)</FormLabel>
@@ -242,8 +281,8 @@ export function ProductForm({ initialData, onSubmit, onCancel }: ProductFormProp
                       min="1" 
                       max="120" 
                       placeholder="请输入保质期" 
-                      {...field} 
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -252,9 +291,9 @@ export function ProductForm({ initialData, onSubmit, onCancel }: ProductFormProp
             />
           </div>
           
-          <FormField
-            control={form.control}
+          <Controller
             name="product_details"
+            control={form.control}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>商品详情</FormLabel>

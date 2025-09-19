@@ -10,6 +10,7 @@ import { Appointments } from "@/pages/appointments"
 import { Inventory } from "@/pages/inventory"
 import { InventoryProducts } from "@/pages/inventory/products"
 import { InventoryStock } from "@/pages/inventory/stock"
+import { Classify } from "@/pages/inventory/classify"
 import { Toaster } from "sonner"
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/inventory/products" element={<InventoryProducts />} />
             <Route path="/inventory/stock" element={<InventoryStock />} />
+            <Route path="/inventory/classify" element={<Classify />} />
           </Route>
         </Routes>
       </BrowserRouter>
