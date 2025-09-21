@@ -241,6 +241,34 @@ export const useCreateClassify = () => {
   })
 }
 
+export const useUpdateClassify = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => inventoryApi.updateClassify(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["classify"] })
+      toast.success("分类更新成功！")
+    },
+    onError: () => {
+      toast.error("分类更新失败，请重试")
+    },
+  })
+}
+
+export const useDeleteClassify = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => inventoryApi.deleteClassify(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["classify"] })
+      toast.success("分类删除成功！")
+    },
+    onError: () => {
+      toast.error("分类删除失败，请重试")
+    },
+  })
+}
+
 export const useCreateSpec = () => {
   const queryClient = useQueryClient()
   return useMutation({

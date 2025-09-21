@@ -355,6 +355,7 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
             )}
           />
           
+          
           {/* 规格信息 */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
