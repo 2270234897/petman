@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Package, Tag, ArrowDownToLine, Copyright, Truck } from "lucide-react"
+import { Package, Tag, ArrowDownToLine, Copyright, Truck, Upload } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 export function Inventory() {
@@ -9,11 +9,20 @@ export function Inventory() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">库存管理</h1>
-        <p className="text-muted-foreground">
-          管理宠物用品和药品库存
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">库存管理</h1>
+          <p className="text-muted-foreground">
+            管理宠物用品和药品库存
+          </p>
+        </div>
+        <Button 
+          className="btn-vibrant-teal"
+          onClick={() => navigate("/inventory/import")}
+        >
+          <Upload className="mr-2 h-4 w-4" />
+          批量导入
+        </Button>
       </div>
 
       {/* Navigation Cards */}

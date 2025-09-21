@@ -5,11 +5,11 @@ import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent } from "@/components/ui/card"
 import { 
   Form, 
   FormControl, 
   FormDescription, 
-  FormField, 
   FormItem, 
   FormLabel, 
   FormMessage 
@@ -32,6 +32,7 @@ const productFormSchema = z.object({
   classify_id: z.number({ required_error: "请选择分类" }),
   product_baozhiqi: z.number().min(1, "保质期必须大于0").max(120, "保质期不能超过120个月"),
   product_details: z.string().optional(),
+  cover_image: z.string().optional(),
 })
 
 type ProductFormValues = z.infer<typeof productFormSchema>
@@ -72,6 +73,7 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
       classify_id: initialData?.classify_id || initialData?.classify_level1_classify1_ID || undefined,
       product_baozhiqi: initialData?.product_baozhiqi ?? 12,
       product_details: initialData?.product_details || initialData?.local || "",
+      cover_image: initialData?.cover_image || "",
     },
   })
   
@@ -152,6 +154,7 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
       product_baozhiqi: values.product_baozhiqi,
       local: values.product_details || '',
       brand_brandID: values.brand_id,
+      cover_image: values.cover_image || '',
       specs: specs.map(spec => ({
         spec_name: spec.name,
         spec_value: spec.value || '',
@@ -220,10 +223,10 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">
+        <h2 className="text-2xl font-bold">
           {initialData ? "编辑商品" : "新增商品"}
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground">
           {initialData ? "编辑现有商品信息" : "添加新的商品及其规格信息"}
         </p>
       </div>
@@ -355,72 +358,105 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
             )}
           />
           
+          <Controller
+            name="cover_image"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>商品封面图片</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="请输入商品封面图片URL (可选)" 
+                    {...field} 
+                  />
+                </FormControl>
+                <FormDescription>
+                  商品的主要展示图片，将作为商品列表中的封面图显示
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
           
           {/* 规格信息 */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">规格信息</h3>
+              <div>
+                <h3 className="text-lg font-semibold">商品规格</h3>
+                <p className="text-sm text-muted-foreground">为商品添加不同的规格选项，如重量、尺寸等</p>
+              </div>
               <Button type="button" variant="outline" onClick={addSpec}>
                 添加规格
               </Button>
             </div>
             
-            {specs.map((spec, index) => (
-              <div key={spec.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border rounded-lg">
-                <div className="md:col-span-3">
-                  <label className="text-sm font-medium">规格名称</label>
-                  <Input
-                    value={spec.name}
-                    onChange={(e) => updateSpec(spec.id, "name", e.target.value)}
-                    placeholder="如: 500g/袋"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium">规格值</label>
-                  <Input
-                    value={spec.value || ''}
-                    onChange={(e) => updateSpec(spec.id, "value", e.target.value)}
-                    placeholder="如: 500g"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium">初始库存</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={spec.stock}
-                    onChange={(e) => updateSpec(spec.id, "stock", Number(e.target.value))}
-                    placeholder="库存数量"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium">条形码</label>
-                  <Input
-                    type="number"
-                    value={spec.barcode || ''}
-                    onChange={(e) => updateSpec(spec.id, "barcode", e.target.value)}
-                    placeholder="条形码"
-                  />
-                </div>
-                <div className="md:col-span-3">
-                  <label className="text-sm font-medium">图片链接</label>
-                  <Input
-                    value={spec.picture || ''}
-                    onChange={(e) => updateSpec(spec.id, "picture", e.target.value)}
-                    placeholder="图片URL"
-                  />
-                </div>
-                <div className="md:col-span-12 flex items-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => removeSpec(spec.id)}
-                    disabled={specs.length <= 1}
-                  >
-                    删除规格
-                  </Button>
-                </div>
-              </div>
+            {specs.map((spec) => (
+              <Card key={spec.id} className="border border-gray-200">
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div className="md:col-span-3">
+                      <label className="text-sm font-medium text-gray-700">规格名称</label>
+                      <Input
+                        value={spec.name}
+                        onChange={(e) => updateSpec(spec.id, "name", e.target.value)}
+                        placeholder="如: 重量、尺寸"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-sm font-medium text-gray-700">规格值</label>
+                      <Input
+                        value={spec.value || ''}
+                        onChange={(e) => updateSpec(spec.id, "value", e.target.value)}
+                        placeholder="如: 500g"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-sm font-medium text-gray-700">初始库存</label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={spec.stock}
+                        onChange={(e) => updateSpec(spec.id, "stock", Number(e.target.value))}
+                        placeholder="库存数量"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-sm font-medium text-gray-700">条形码</label>
+                      <Input
+                        type="number"
+                        value={spec.barcode || ''}
+                        onChange={(e) => updateSpec(spec.id, "barcode", e.target.value)}
+                        placeholder="条形码"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="md:col-span-3">
+                      <label className="text-sm font-medium text-gray-700">规格图片</label>
+                      <Input
+                        value={spec.picture || ''}
+                        onChange={(e) => updateSpec(spec.id, "picture", e.target.value)}
+                        placeholder="图片URL"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="md:col-span-12 flex justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => removeSpec(spec.id)}
+                        disabled={specs.length <= 1}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        删除规格
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
           
