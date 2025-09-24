@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react"
-import { useQueryClient } from "@tanstack/react-query"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,9 +34,10 @@ export function Categories() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [categoryName, setCategoryName] = useState("")
+  const [categoryLevel, setCategoryLevel] = useState<number>(1)
   const [parentCategoryId, setParentCategoryId] = useState<number | null>(null)
   const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set())
-  const queryClient = useQueryClient()
+  const [expandedParentSelection, setExpandedParentSelection] = useState<Set<number>>(new Set())
 
   const { data: categories, isLoading, isError } = useClassify()
   const createMutation = useCreateClassify()
@@ -83,11 +83,70 @@ export function Categories() {
     return rootCategories
   }, [categories?.data])
 
+
+  // 构建父分类选择的树型结构
+  const buildParentCategoryTree = () => {
+    if (!categories?.data) return []
+    
+    if (categoryLevel === 1) {
+      return []
+    } else if (categoryLevel === 2) {
+      // 二级分类的父级是一级分类
+      return categories.data
+        .filter((cat: any) => !cat.parentID)
+        .map((cat: any) => ({
+          classify1_ID: cat.classify1_ID,
+          name: cat.name,
+          level: 1,
+          children: []
+        }))
+    } else if (categoryLevel === 3) {
+      // 三级分类的父级是二级分类，需要构建树型结构
+      const categoryMap = new Map<number, any>()
+      const rootCategories: any[] = []
+      
+      // 创建所有分类节点
+      categories.data.forEach((cat: any) => {
+        categoryMap.set(cat.classify1_ID, {
+          classify1_ID: cat.classify1_ID,
+          name: cat.name,
+          parentID: cat.parentID,
+          level: cat.parentID ? 2 : 1,
+          children: []
+        })
+      })
+      
+      // 构建树结构
+      categories.data.forEach((cat: any) => {
+        const category = categoryMap.get(cat.classify1_ID)!
+        if (cat.parentID) {
+          const parent = categoryMap.get(cat.parentID)
+          if (parent) {
+            parent.children.push(category)
+          }
+        } else {
+          rootCategories.push(category)
+        }
+      })
+      
+      return rootCategories
+    }
+    return []
+  }
+
   const resetForm = () => {
     setCategoryName("")
+    setCategoryLevel(1)
     setParentCategoryId(null)
     setEditingCategory(null)
     setIsDialogOpen(false)
+  }
+
+  const resetFormData = () => {
+    setCategoryName("")
+    setCategoryLevel(1)
+    setParentCategoryId(null)
+    setEditingCategory(null)
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -98,9 +157,15 @@ export function Categories() {
       return
     }
 
+    // 验证父分类选择
+    if (categoryLevel > 1 && !parentCategoryId) {
+      toast.error(`请选择${categoryLevel === 2 ? '一级' : '二级'}分类作为父分类`)
+      return
+    }
+
     const formData = {
       name: categoryName,
-      parentID: parentCategoryId
+      parentID: categoryLevel === 1 ? null : parentCategoryId
     }
 
     if (editingCategory) {
@@ -134,6 +199,7 @@ export function Categories() {
   const handleEdit = (category: Category) => {
     setEditingCategory(category)
     setCategoryName(category.name)
+    setCategoryLevel(category.level || 1)
     setParentCategoryId(category.parentID || null)
     setIsDialogOpen(true)
   }
@@ -162,6 +228,92 @@ export function Categories() {
       newExpanded.add(categoryId)
     }
     setExpandedCategories(newExpanded)
+  }
+
+  const toggleParentSelectionExpansion = (categoryId: number) => {
+    const newExpanded = new Set(expandedParentSelection)
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId)
+    } else {
+      newExpanded.add(categoryId)
+    }
+    setExpandedParentSelection(newExpanded)
+  }
+
+  // 渲染父分类选择的树型结构
+  const renderParentSelectionTree = (categories: any[], level: number = 0) => {
+    return categories.map((category) => {
+      const isExpanded = expandedParentSelection.has(category.classify1_ID)
+      const hasChildren = category.children && category.children.length > 0
+      const isSelectable = (categoryLevel === 2 && level === 0) || (categoryLevel === 3 && level === 1)
+      
+      return (
+        <div key={category.classify1_ID} className="space-y-1">
+          <div 
+            className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
+              isSelectable 
+                ? 'hover:bg-blue-50 border-blue-200' 
+                : 'bg-gray-50 border-gray-200 cursor-not-allowed opacity-60'
+            } ${
+              parentCategoryId === category.classify1_ID ? 'bg-blue-100 border-blue-400' : ''
+            }`}
+            style={{ marginLeft: `${level * 16}px` }}
+            onClick={() => {
+              if (isSelectable) {
+                setParentCategoryId(category.classify1_ID)
+              }
+            }}
+          >
+            {/* 展开/收起按钮 */}
+            {hasChildren && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  toggleParentSelectionExpansion(category.classify1_ID)
+                }}
+                className="p-1 h-5 w-5"
+              >
+                {isExpanded ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronRight className="h-3 w-3" />
+                )}
+              </Button>
+            )}
+            
+            {/* 分类图标和名称 */}
+            <div className="flex items-center gap-2">
+              {level === 0 ? (
+                <FolderOpen className="h-4 w-4 text-blue-600" />
+              ) : (
+                <Folder className="h-4 w-4 text-green-600" />
+              )}
+              <span className={`text-sm ${isSelectable ? 'font-medium' : 'text-gray-500'}`}>
+                {category.name}
+              </span>
+              <Badge 
+                variant="outline" 
+                className={`text-xs ${
+                  level === 0 ? 'bg-blue-100 text-blue-700 border-blue-300' :
+                  'bg-green-100 text-green-700 border-green-300'
+                }`}
+              >
+                {level === 0 ? '一级分类' : '二级分类'}
+              </Badge>
+            </div>
+          </div>
+          
+          {/* 递归渲染子分类 */}
+          {hasChildren && isExpanded && (
+            <div className="space-y-1">
+              {renderParentSelectionTree(category.children, level + 1)}
+            </div>
+          )}
+        </div>
+      )
+    })
   }
 
   const renderCategoryTree = (categories: Category[], level: number = 0) => {
@@ -272,18 +424,80 @@ export function Categories() {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => resetForm()} className="btn-vibrant-teal">
+            <Button 
+              onClick={() => {
+                resetFormData()
+                setIsDialogOpen(true)
+              }} 
+              className="btn-vibrant-teal"
+            >
               <Plus className="mr-2 h-4 w-4" />
-              添加分类
+              添加分类 - 测试版本
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {editingCategory ? "编辑分类" : "添加分类"}
+                {editingCategory ? "编辑分类" : "添加分类 - 新版本"}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* 1. 分类等级选择 */}
+              <div className="space-y-2">
+                <Label htmlFor="categoryLevel">分类等级 *</Label>
+                <Select 
+                  value={categoryLevel.toString()} 
+                  onValueChange={(value) => {
+                    const level = Number(value)
+                    setCategoryLevel(level)
+                    // 当等级改变时，重置父分类选择
+                    setParentCategoryId(null)
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择分类等级" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1级分类（顶级分类）</SelectItem>
+                    <SelectItem value="2">2级分类（需要选择1级分类作为父级）</SelectItem>
+                    <SelectItem value="3">3级分类（需要选择2级分类作为父级）</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  {categoryLevel === 1 && "一级分类为顶级分类，没有父级"}
+                  {categoryLevel === 2 && "二级分类需要选择一级分类作为父级"}
+                  {categoryLevel === 3 && "三级分类需要选择二级分类作为父级"}
+                </p>
+              </div>
+
+              {/* 2. 父分类选择 */}
+              {categoryLevel > 1 && (
+                <div className="space-y-2">
+                  <Label>父分类选择 *</Label>
+                  <div className="border rounded-lg p-4 max-h-60 overflow-y-auto bg-gray-50">
+                    {buildParentCategoryTree().length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Folder className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">
+                          {categoryLevel === 2 ? "暂无一级分类，请先创建一级分类" : "暂无二级分类，请先创建二级分类"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {renderParentSelectionTree(buildParentCategoryTree())}
+                      </div>
+                    )}
+                  </div>
+                  {parentCategoryId && (
+                    <div className="flex items-center gap-2 text-sm text-green-600">
+                      <Folder className="h-4 w-4" />
+                      已选择父分类：{categories?.data?.find((cat: any) => cat.classify1_ID === parentCategoryId)?.name}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 3. 分类名称输入 */}
               <div className="space-y-2">
                 <Label htmlFor="categoryName">分类名称 *</Label>
                 <Input
@@ -293,27 +507,6 @@ export function Categories() {
                   placeholder="请输入分类名称"
                   required
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="parentCategory">父级分类</Label>
-                <Select 
-                  value={parentCategoryId?.toString() || ""} 
-                  onValueChange={(value) => setParentCategoryId(value ? Number(value) : null)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择父级分类（可选，不选则为一级分类）" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">无（一级分类）</SelectItem>
-                    {categories?.data
-                      ?.filter((cat: any) => !cat.parentID) // 只显示一级分类作为父级
-                      ?.map((cat: any) => (
-                        <SelectItem key={cat.classify1_ID} value={cat.classify1_ID.toString()}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
               </div>
               <div className="flex justify-end space-x-2">
                 <Button
@@ -352,7 +545,10 @@ export function Categories() {
               <Folder className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-semibold mb-2">暂无分类数据</h3>
               <p className="mb-4">还没有创建任何分类，点击上方按钮开始创建</p>
-              <Button onClick={() => setIsDialogOpen(true)} className="btn-vibrant-teal">
+              <Button onClick={() => {
+                resetFormData()
+                setIsDialogOpen(true)
+              }} className="btn-vibrant-teal">
                 <Plus className="mr-2 h-4 w-4" />
                 创建第一个分类
               </Button>
