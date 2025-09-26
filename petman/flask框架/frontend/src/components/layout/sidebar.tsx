@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   Settings,
+  Camera,
 } from "lucide-react"
 
 const navigation = [
@@ -19,6 +20,7 @@ const navigation = [
   { name: "客户管理", href: "/customers", icon: Users },
   { name: "预约管理", href: "/appointments", icon: Calendar },
   { name: "库存管理", href: "/inventory", icon: Package },
+  { name: "图片识别", href: "/image-recognition", icon: Camera },
   { name: "系统设置", href: "/settings", icon: Settings },
 ]
 

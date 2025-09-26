@@ -53,6 +53,7 @@ export const inventoryApi = {
   getDealers: () => api.get("/api/inventory/dealers"),
   getClassify: () => api.get("/api/inventory/classify"),
   getStockInRecords: () => api.get("/api/inventory/stock_in_records"),
+  getStockInRecordDetail: (id: number) => api.get(`/api/inventory/stock_in_records/${id}`),
   createProduct: (data: any) => api.post("/api/inventory/products", data),
   updateProduct: (id: number, data: any) => api.put(`/api/inventory/products/${id}`, data),
   deleteProduct: (id: number) => api.delete(`/api/inventory/products/${id}`),
@@ -68,4 +69,9 @@ export const inventoryApi = {
   createClassify: (data: any) => api.post("/api/inventory/classify", data),
   updateClassify: (id: number, data: any) => api.put(`/api/inventory/classify/${id}`, data),
   deleteClassify: (id: number) => api.delete(`/api/inventory/classify/${id}`),
+  // 规格类型相关API
+  getSpecTypes: () => api.get("/api/inventory/spec-types"),
+  createSpecType: (data: any) => api.post("/api/inventory/spec-types", data),
+  updateSpecType: (id: number, data: any) => api.put(`/api/inventory/spec-types/${id}`, data),
+  deleteSpecType: (id: number) => api.delete(`/api/inventory/spec-types/${id}`),
 }

@@ -184,6 +184,56 @@ export const useClassify = () => {
   })
 }
 
+// 规格类型Hook
+export const useSpecTypes = () => {
+  return useQuery({
+    queryKey: ["spec-types"],
+    queryFn: () => inventoryApi.getSpecTypes().then(res => res.data),
+  })
+}
+
+export const useCreateSpecType = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: inventoryApi.createSpecType,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["spec-types"] })
+      toast.success("规格类型添加成功！")
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "规格类型添加失败，请重试")
+    },
+  })
+}
+
+export const useUpdateSpecType = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => inventoryApi.updateSpecType(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["spec-types"] })
+      toast.success("规格类型更新成功！")
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "规格类型更新失败，请重试")
+    },
+  })
+}
+
+export const useDeleteSpecType = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => inventoryApi.deleteSpecType(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["spec-types"] })
+      toast.success("规格类型删除成功！")
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "规格类型删除失败，请重试")
+    },
+  })
+}
+
 export const useCreateInventoryItem = () => {
   const queryClient = useQueryClient()
   return useMutation({
@@ -373,5 +423,22 @@ export const useStockOperation = () => {
     onError: () => {
       toast.error("库存操作失败，请重试")
     },
+  })
+}
+
+// 入库单记录Hook
+export const useStockInRecords = () => {
+  return useQuery({
+    queryKey: ["stock-in-records"],
+    queryFn: () => inventoryApi.getStockInRecords().then(res => res.data),
+  })
+}
+
+// 入库单详情Hook
+export const useStockInRecordDetail = (stockInId: number) => {
+  return useQuery({
+    queryKey: ["stock-in-record-detail", stockInId],
+    queryFn: () => inventoryApi.getStockInRecordDetail(stockInId).then(res => res.data),
+    enabled: !!stockInId,
   })
 }

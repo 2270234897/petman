@@ -2,12 +2,17 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Package, Plus, Search, Filter, Loader2, ArrowDownToLine, ArrowUpFromLine } from "lucide-react"
+import { Package, Plus, Search, Filter, Loader2, ArrowDownToLine, ArrowUpFromLine, FileText, Eye } from "lucide-react"
 import { useInventory, useDealers, useInventoryItems, useStockIn, useStockOut } from "@/hooks/useApi"
 import { toast } from "sonner"
+import { StockInList } from "@/components/inventory/stock-in-list"
+import { StockInDetail } from "@/components/inventory/stock-in-detail"
 
 export function InventoryStock() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [currentView, setCurrentView] = useState<'inventory' | 'stock-in-list' | 'stock-in-detail'>('inventory')
+  const [selectedStockInId, setSelectedStockInId] = useState<number | null>(null)
+  
   const { data: inventoryData, isLoading: isInventoryLoading, refetch } = useInventory()
   const { data: dealersData, isLoading: isDealersLoading } = useDealers()
   const { data: itemsData, isLoading: isItemsLoading } = useInventoryItems()
@@ -50,6 +55,32 @@ export function InventoryStock() {
     // 这里可以添加实际的新增出库记录逻辑
   }
 
+  // 处理查看入库单详情
+  const handleViewStockInDetail = (stockInId: number) => {
+    setSelectedStockInId(stockInId)
+    setCurrentView('stock-in-detail')
+  }
+
+  // 处理返回入库单列表
+  const handleBackToStockInList = () => {
+    setSelectedStockInId(null)
+    setCurrentView('stock-in-list')
+  }
+
+  // 处理返回库存管理主页
+  const handleBackToInventory = () => {
+    setCurrentView('inventory')
+  }
+
+  // 根据当前视图渲染不同的内容
+  if (currentView === 'stock-in-list') {
+    return <StockInList onViewDetail={handleViewStockInDetail} />
+  }
+
+  if (currentView === 'stock-in-detail' && selectedStockInId) {
+    return <StockInDetail stockInId={selectedStockInId} onBack={handleBackToStockInList} />
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -57,10 +88,14 @@ export function InventoryStock() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">库存管理</h1>
           <p className="text-muted-foreground">
-            管理商品入库和出库记录
+            管理商品库存和查看入库记录
           </p>
         </div>
         <div className="space-x-2">
+          <Button onClick={() => setCurrentView('stock-in-list')} className="btn-vibrant-blue">
+            <FileText className="mr-2 h-4 w-4" />
+            查看入库单
+          </Button>
           <Button onClick={handleAddStockOutRecord} className="btn-vibrant-orange">
             <ArrowDownToLine className="mr-2 h-4 w-4" />
             新增出库记录
@@ -139,9 +174,9 @@ export function InventoryStock() {
       {/* Stock Operations */}
       <Card className="vibrant-card-pink border-2">
         <CardHeader>
-          <CardTitle>库存操作记录</CardTitle>
+          <CardTitle>当前库存商品</CardTitle>
           <CardDescription>
-            商品入库和出库记录
+            查看当前库存商品信息，点击上方"查看入库单"可查看详细的入库记录
           </CardDescription>
         </CardHeader>
         <CardContent>

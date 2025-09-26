@@ -15,7 +15,9 @@ export function Pets() {
     pet_breeds: "",
     pet_gender: "",
     pet_age: "",
-    customers_customerID: "",
+    customer_id: "",
+    pet_image: "",
+    neuter: false,
   })
 
   const { data, isLoading, refetch } = usePets()
@@ -30,17 +32,17 @@ export function Pets() {
   })
 
   const onSubmit = async () => {
-    if (!form.petname || !form.pet_species || !form.pet_breeds || !form.pet_gender || !form.pet_age || !form.customers_customerID) {
+    if (!form.petname || !form.pet_species || !form.pet_breeds || !form.pet_gender || !form.pet_age || !form.customer_id) {
       toast.error("请填写所有必填字段")
       return
     }
     await createPet.mutateAsync({
       ...form,
       pet_age: Number(form.pet_age),
-      customers_customerID: Number(form.customers_customerID),
+      customer_id: Number(form.customer_id),
     })
     setShowCreate(false)
-    setForm({ petname: "", pet_species: "", pet_breeds: "", pet_gender: "", pet_age: "", customers_customerID: "" })
+    setForm({ petname: "", pet_species: "", pet_breeds: "", pet_gender: "", pet_age: "", customer_id: "", pet_image: "", neuter: false })
     refetch()
   }
 
@@ -122,7 +124,18 @@ export function Pets() {
             <Input placeholder="物种（pet_species）" value={form.pet_species} onChange={e=>setForm({...form, pet_species:e.target.value})} />
             <Input placeholder="性别（pet_gender）" value={form.pet_gender} onChange={e=>setForm({...form, pet_gender:e.target.value})} />
             <Input placeholder="年龄（pet_age）数字" value={form.pet_age} onChange={e=>setForm({...form, pet_age:e.target.value})} />
-            <Input placeholder="主人ID（customers_customerID）" value={form.customers_customerID} onChange={e=>setForm({...form, customers_customerID:e.target.value})} />
+            <Input placeholder="主人ID（customer_id）" value={form.customer_id} onChange={e=>setForm({...form, customer_id:e.target.value})} />
+            <Input placeholder="宠物图片URL（pet_image）" value={form.pet_image} onChange={e=>setForm({...form, pet_image:e.target.value})} />
+            <div className="flex items-center space-x-2">
+              <input 
+                type="checkbox" 
+                id="neuter" 
+                checked={form.neuter} 
+                onChange={e=>setForm({...form, neuter:e.target.checked})}
+                className="rounded"
+              />
+              <label htmlFor="neuter" className="text-sm font-medium">已绝育</label>
+            </div>
             <div className="col-span-full flex gap-2">
               <Button onClick={onSubmit} disabled={createPet.isPending} className="btn-vibrant-green">
                 {createPet.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} 提交
@@ -138,14 +151,14 @@ export function Pets() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredPets.map((pet: any) => (
-            <Card key={pet.petID} className="hover:shadow-md transition-shadow vibrant-card-orange border-2">
+            <Card key={pet.pet_id} className="hover:shadow-md transition-shadow vibrant-card-orange border-2">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Heart className="h-5 w-5 text-pink-600" />
                     <CardTitle className="text-lg">{pet.petname}</CardTitle>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleMoreActions(pet.petID, pet.petname)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleMoreActions(pet.pet_id, pet.petname)}>
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </div>
@@ -159,8 +172,8 @@ export function Pets() {
                   <span className="font-medium">{pet.owner_name ?? '-'}</span>
                 </div>
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleViewDetails(pet.petID, pet.petname)}>查看详情</Button>
-                  <Button variant="destructive" size="sm" className="flex-0" onClick={() => handleDelete(pet.petID, pet.petname)}> <Trash2 className="h-4 w-4"/> </Button>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleViewDetails(pet.pet_id, pet.petname)}>查看详情</Button>
+                  <Button variant="destructive" size="sm" className="flex-0" onClick={() => handleDelete(pet.pet_id, pet.petname)}> <Trash2 className="h-4 w-4"/> </Button>
                 </div>
               </CardContent>
             </Card>

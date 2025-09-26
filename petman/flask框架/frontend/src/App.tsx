@@ -10,10 +10,14 @@ import { Appointments } from "@/pages/appointments"
 import { Inventory } from "@/pages/inventory"
 import { InventoryProducts } from "@/pages/inventory/products"
 import { InventoryStock } from "@/pages/inventory/stock"
+import { InventorySpecs } from "@/pages/inventory/specs"
 import { Classify } from "@/pages/inventory/classify"
 import { Brands } from "@/pages/inventory/brands"
 import { Dealers } from "@/pages/inventory/dealers"
 import { ImportPage } from "@/pages/inventory/import"
+import { QuickImport } from "@/pages/quick-import"
+import { TestPage } from "@/pages/test-page"
+import { ImageRecognitionPage } from "@/pages/image-recognition"
 import { Toaster } from "sonner"
 
 function App() {
@@ -29,10 +33,14 @@ function App() {
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/inventory/products" element={<InventoryProducts />} />
             <Route path="/inventory/stock" element={<InventoryStock />} />
+            <Route path="/inventory/specs" element={<InventorySpecs />} />
             <Route path="/inventory/classify" element={<Classify />} />
             <Route path="/inventory/brands" element={<Brands />} />
             <Route path="/inventory/dealers" element={<Dealers />} />
             <Route path="/inventory/import" element={<ImportPage />} />
+            <Route path="/quick-import" element={<QuickImport />} />
+            <Route path="/image-recognition" element={<ImageRecognitionPage />} />
+            <Route path="/test" element={<TestPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

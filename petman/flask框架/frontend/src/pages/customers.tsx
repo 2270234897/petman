@@ -107,7 +107,7 @@ export function Customers() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredCustomers.map((customer: any) => (
-            <Card key={customer.customerID} className="hover:shadow-md transition-shadow vibrant-card-purple border-2">
+            <Card key={customer.customer_id} className="hover:shadow-md transition-shadow vibrant-card-purple border-2">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
@@ -124,7 +124,7 @@ export function Customers() {
                     >
                       {customer.Membershiplevel >= 3 ? "VIP" : "普通"}
                     </span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleMoreActions(customer.customerID, customer.customername)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleMoreActions(customer.customer_id, customer.customername)}>
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </div>
@@ -148,10 +148,10 @@ export function Customers() {
                   <span className="font-medium">{new Date(customer.create_time).toLocaleDateString()}</span>
                 </div>
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleViewDetails(customer.customerID, customer.customername)}>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleViewDetails(customer.customer_id, customer.customername)}>
                     查看详情
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(customer.customerID, customer.customername)}>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(customer.customer_id, customer.customername)}>
                     编辑
                   </Button>
                 </div>

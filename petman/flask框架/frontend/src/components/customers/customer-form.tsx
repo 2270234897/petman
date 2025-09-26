@@ -18,13 +18,14 @@ export function CustomerForm({ onSuccess, onCancel }: CustomerFormProps) {
     telphone: "",
     address: "",
     Membershiplevel: "1",
+    membership_balance: "0",
   })
 
   const createCustomer = useCreateCustomer()
 
   const onSubmit = async () => {
     if (!form.customername || !form.gender || !form.telphone) {
-      toast.error("请填写所有必填字段")
+      toast.error("请填写所有必填字段（姓名、性别、电话）")
       return
     }
 
@@ -32,6 +33,7 @@ export function CustomerForm({ onSuccess, onCancel }: CustomerFormProps) {
       await createCustomer.mutateAsync({
         ...form,
         Membershiplevel: Number(form.Membershiplevel),
+        membership_balance: Number(form.membership_balance),
       })
       onSuccess?.()
     } catch (error) {
@@ -80,10 +82,19 @@ export function CustomerForm({ onSuccess, onCancel }: CustomerFormProps) {
               onChange={e => setForm({...form, Membershiplevel: e.target.value})} 
             />
           </div>
-          <div className="md:col-span-2 space-y-2">
-            <label className="text-sm font-medium">地址</label>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">会员余额</label>
             <Input 
-              placeholder="请输入地址" 
+              type="number"
+              placeholder="请输入会员余额" 
+              value={form.membership_balance} 
+              onChange={e => setForm({...form, membership_balance: e.target.value})} 
+            />
+          </div>
+          <div className="md:col-span-2 space-y-2">
+            <label className="text-sm font-medium">地址（可选）</label>
+            <Input 
+              placeholder="请输入地址，不填写默认为'未知地址'" 
               value={form.address} 
               onChange={e => setForm({...form, address: e.target.value})} 
             />
