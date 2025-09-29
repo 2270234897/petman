@@ -2,6 +2,7 @@
 -- Mon Sep 15 01:55:25 2025
 -- Model: New Model    Version: 1.0
 -- MySQL Workbench Forward Engineering
+-- 修复版本 - 解决商品创建500错误
 
 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
@@ -46,6 +47,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`pets` (
   `pet_age` INT NOT NULL,
   `neuter` VARCHAR(45) NULL,
   `pet_character` VARCHAR(45) NULL,
+  `pet_image` VARCHAR(255) NULL COMMENT '宠物图片',
   PRIMARY KEY (`petID`),
   INDEX `fk_pets_customers1_idx` (`customers_customerID` ASC) VISIBLE,
   CONSTRAINT `fk_pets_customers1`
@@ -53,28 +55,24 @@ CREATE TABLE IF NOT EXISTS `mydb`.`pets` (
     REFERENCES `mydb`.`customers` (`customerID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_unicode_ci;
+ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
 -- Table `mydb`.`classify_level1`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `mydb`.`classify_level1` (
-  `classify1_ID` INT NOT NULL AUTO_INCREMENT,
-  `parentID` INT NULL,
+  `classify1_ID` INT NOT NULL,
   `name` VARCHAR(45) NOT NULL,
+  `parentID` INT NULL,
   PRIMARY KEY (`classify1_ID`),
-  INDEX `parentID_idx` (`parentID` ASC) INVISIBLE,
-  CONSTRAINT `parentID`
+  INDEX `fk_classify_level1_classify_level1_idx` (`parentID` ASC) VISIBLE,
+  CONSTRAINT `fk_classify_level1_classify_level1`
     FOREIGN KEY (`parentID`)
     REFERENCES `mydb`.`classify_level1` (`classify1_ID`)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_unicode_ci;
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
@@ -96,12 +94,15 @@ CREATE TABLE IF NOT EXISTS `mydb`.`product` (
   `productID` INT NOT NULL AUTO_INCREMENT,
   `classify_level1_classify1_ID` INT NOT NULL,
   `product_name` VARCHAR(45) NOT NULL,
-  `product_baozhiqi` INT NOT NULL,
+  `product_baozhiqi` INT NULL COMMENT '保质期（月），可为空',
   `local` VARCHAR(45) NULL,
+  `cover_image` VARCHAR(255) NULL COMMENT '商品封面图片',
   `brand_brandID` INT NOT NULL,
   PRIMARY KEY (`productID`),
   INDEX `fk_product_classify_level11_idx` (`classify_level1_classify1_ID` ASC) VISIBLE,
   INDEX `fk_product_brand1_idx` (`brand_brandID` ASC) VISIBLE,
+  INDEX `idx_product_brand` (`brand_brandID` ASC) VISIBLE,
+  INDEX `idx_product_classify` (`classify_level1_classify1_ID` ASC) VISIBLE,
   CONSTRAINT `fk_product_classify_level11`
     FOREIGN KEY (`classify_level1_classify1_ID`)
     REFERENCES `mydb`.`classify_level1` (`classify1_ID`)
@@ -112,6 +113,20 @@ CREATE TABLE IF NOT EXISTS `mydb`.`product` (
     REFERENCES `mydb`.`brand` (`brandID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
+
+
+-- -----------------------------------------------------
+-- Table `mydb`.`spec_type`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `mydb`.`spec_type` (
+  `spec_type_id` INT NOT NULL AUTO_INCREMENT,
+  `spec_name` VARCHAR(100) NOT NULL,
+  `unit` VARCHAR(20) NULL,
+  `description` TEXT NULL,
+  PRIMARY KEY (`spec_type_id`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_unicode_ci;
@@ -157,18 +172,28 @@ COLLATE = utf8_unicode_ci;
 CREATE TABLE IF NOT EXISTS `mydb`.`spec` (
   `specID` INT NOT NULL,
   `product_productID` INT NOT NULL,
-  `spec_name` VARCHAR(45) NOT NULL,
-  `spec_value` VARCHAR(45) NOT NULL,
-  `barcode` INT NULL,
-  `picture` VARCHAR(45) NULL,
-  `总库存` INT NULL,
+  `spec_type_id` INT NULL COMMENT '规格类型ID，可为空',
+  `spec_name` VARCHAR(45) NULL COMMENT '规格名称，可为空',
+  `spec_value` VARCHAR(45) NULL COMMENT '规格值，可为空',
+  `barcode` VARCHAR(50) NULL COMMENT '条形码，可为空',
+  `picture` VARCHAR(255) NULL COMMENT '规格图片，可为空',
+  `总库存` INT NULL DEFAULT 0 COMMENT '总库存，可为空，默认为0',
+  `unit` VARCHAR(20) NULL COMMENT '单位',
   PRIMARY KEY (`specID`),
   INDEX `fk_spec_detail_product1_idx` (`product_productID` ASC) VISIBLE,
+  INDEX `fk_spec_spec_type_idx` (`spec_type_id` ASC) VISIBLE,
+  INDEX `idx_spec_barcode` (`barcode` ASC) VISIBLE,
+  INDEX `idx_spec_product` (`product_productID` ASC) VISIBLE,
   CONSTRAINT `fk_spec_detail_product1`
     FOREIGN KEY (`product_productID`)
     REFERENCES `mydb`.`product` (`productID`)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_spec_spec_type`
+    FOREIGN KEY (`spec_type_id`)
+    REFERENCES `mydb`.`spec_type` (`spec_type_id`)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE)
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8
 COLLATE = utf8_unicode_ci;
@@ -293,80 +318,33 @@ CREATE TABLE `appointments` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`appointment_id`),
-  FOREIGN KEY (`customerid`) REFERENCES `customers`(`customerid`),
-  FOREIGN KEY (`petid`) REFERENCES `pets`(`petid`),
+  FOREIGN KEY (`customerid`) REFERENCES `customers`(`customerID`),
+  FOREIGN KEY (`petid`) REFERENCES `pets`(`petID`),
   FOREIGN KEY (`service_id`) REFERENCES `services`(`service_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 插入默认数据
+INSERT IGNORE INTO `spec_type` (`spec_type_id`, `spec_name`, `unit`, `description`) 
+VALUES (1, '默认规格', '', '系统默认规格类型');
 
+-- 插入示例品牌数据
+INSERT IGNORE INTO `brand` (`brandID`, `brandname`) VALUES 
+(1, '示例品牌1'),
+(2, '示例品牌2'),
+(3, '示例品牌3');
 
+-- 插入示例分类数据
+INSERT IGNORE INTO `classify_level1` (`classify1_ID`, `name`, `parentID`) VALUES 
+(1, '宠物用品', NULL),
+(2, '食品', 1),
+(3, '玩具', 1),
+(4, '护理用品', 1);
+
+-- 插入示例经销商数据
+INSERT IGNORE INTO `dealer` (`dealerID`, `dealer_name`, `dealer_tel`, `dealer_address`) VALUES 
+(1, '示例经销商1', 1234567890, '示例地址1'),
+(2, '示例经销商2', 1234567891, '示例地址2');
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
-
-
-USE `mydb`;
--- 插入分类数据
-INSERT INTO classify_level1 (classify1_ID, parentID, name) VALUES
-(1, NULL, '宠物食品'),
-(2, NULL, '宠物用品'),
-(3, 1, '狗粮'),
-(4, 1, '猫粮'),
-(5, 2, '玩具'),
-(6, 2, '清洁用品');
-
--- 插入品牌数据
-INSERT INTO brand (brandID, brandname) VALUES
-(1, '皇家'),
-(2, '宝路'),
-(3, '雀巢'),
-(4, '宠物之家'),
-(5, '爱宠');
-
--- 插入产品数据
-INSERT INTO product (productID, classify_level1_classify1_ID, product_name, product_baozhiqi, local, brand_brandID) VALUES
-(1, 3, '皇家小型犬成犬粮', 12, '法国', 1),
-(2, 3, '宝路牛肉味狗粮', 18, '中国', 2),
-(3, 4, '雀冠猫粮', 24, '美国', 3),
-(4, 5, '宠物玩具球', 36, '中国', 4),
-(5, 6, '宠物沐浴露', 24, '日本', 5);
-
--- 插入规格数据
-INSERT INTO spec (specID, product_productID, spec_name, spec_value, barcode, picture, 总库存) VALUES
-(1, 1, '重量', '3kg', 100001, 'royal_3kg.jpg', 50),
-(2, 1, '重量', '10kg', 100002, 'royal_10kg.jpg', 30),
-(3, 2, '重量', '2kg', 100003, 'pedigree_2kg.jpg', 40),
-(4, 3, '重量', '5kg', 100004, 'purina_5kg.jpg', 25),
-(5, 4, '尺寸', '中号', 100005, 'toy_ball_m.jpg', 100),
-(6, 5, '容量', '500ml', 100006, 'shampoo_500ml.jpg', 60);
-
--- 插入经销商数据
-INSERT INTO dealer (dealerID, dealer_name, dealer_tel, dealer_address) VALUES
-(1, '北京宠物用品批发', 1380013800, '北京市朝阳区'),
-(2, '上海宠物食品公司', 1390013900, '上海市浦东新区'),
-(3, '广州宠物用品中心', 1370013700, '广州市天河区');
-
--- 插入品牌经销商关系
-INSERT INTO brand_has_dealer (brand_brandID, dealer_dealerID) VALUES
-(1, 1),
-(1, 2),
-(2, 1),
-(3, 2),
-(4, 3),
-(5, 3);
-
--- 插入入库单数据
-INSERT INTO stock_in (stock_inID, stock_in_date, total_amount, dealer_dealerID) VALUES
-(1, '2024-01-15 10:00:00', 5000.00, 1),
-(2, '2024-01-20 14:30:00', 8000.00, 2),
-(3, '2024-02-01 09:15:00', 3000.00, 3);
-
--- 插入入库明细数据
-INSERT INTO stock_in_detail (stock_in_detail, stock_inID, spec_specID, quantity, price_in, product_date) VALUES
-(1, 1, 1, '20', 200, '2024-06-01'),
-(2, 1, 2, '10', 180, '2024-05-15'),
-(3, 2, 3, '30', 150, '2024-07-01'),
-(4, 2, 4, '15', 220, '2024-06-20'),
-(5, 3, 5, '50', 30, '2024-08-01'),
-(6, 3, 6, '40', 45, '2024-07-15');

@@ -54,6 +54,9 @@ export const inventoryApi = {
   getClassify: () => api.get("/api/inventory/classify"),
   getStockInRecords: () => api.get("/api/inventory/stock_in_records"),
   getStockInRecordDetail: (id: number) => api.get(`/api/inventory/stock_in_records/${id}`),
+  createStockInRecord: (data: any) => api.post("/api/inventory/stock_in", data),
+  updateStockInRecord: (id: number, data: any) => api.put(`/api/inventory/stock_in/${id}`, data),
+  deleteStockInRecord: (id: number) => api.delete(`/api/inventory/stock_in/${id}`),
   createProduct: (data: any) => api.post("/api/inventory/products", data),
   updateProduct: (id: number, data: any) => api.put(`/api/inventory/products/${id}`, data),
   deleteProduct: (id: number) => api.delete(`/api/inventory/products/${id}`),
@@ -74,4 +77,7 @@ export const inventoryApi = {
   createSpecType: (data: any) => api.post("/api/inventory/spec-types", data),
   updateSpecType: (id: number, data: any) => api.put(`/api/inventory/spec-types/${id}`, data),
   deleteSpecType: (id: number) => api.delete(`/api/inventory/spec-types/${id}`),
+  // 历史价格相关API (暂时禁用，等待后端实现)
+  // getHistoricalPrices: (specId: number) => api.get(`/api/inventory/historical-prices/${specId}`),
+  // createStockInRecord: (data: any) => api.post("/api/inventory/stock-in-records", data),
 }

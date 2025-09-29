@@ -21,6 +21,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select"
+import { SimpleTreeSelect } from "@/components/ui/simple-tree-select"
 import { useBrands, useClassify, useSpecTypes } from "@/hooks/useApi"
 import { toast } from "sonner"
 import { Controller } from "react-hook-form"
@@ -31,7 +32,10 @@ const productFormSchema = z.object({
   product_name: z.string().min(1, "商品名称不能为空"),
   brand_id: z.number({ required_error: "请选择品牌" }),
   classify_id: z.number({ required_error: "请选择分类" }),
-  product_baozhiqi: z.number().min(1, "保质期必须大于0").max(120, "保质期不能超过120个月"),
+  product_baozhiqi: z.union([
+    z.number().min(1, "保质期必须大于0").max(120, "保质期不能超过120个月"),
+    z.undefined()
+  ]).optional(),
   product_details: z.string().optional(),
   cover_image: z.string().optional(),
 })
@@ -76,7 +80,7 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
       product_name: initialData?.product_name || "",
       brand_id: initialData?.brand_id || initialData?.brand_brandID || undefined,
       classify_id: initialData?.classify_id || initialData?.classify_level1_classify1_ID || undefined,
-      product_baozhiqi: initialData?.product_baozhiqi ?? 12,
+      product_baozhiqi: initialData?.product_baozhiqi ?? undefined,
       product_details: initialData?.product_details || initialData?.local || "",
       cover_image: initialData?.cover_image || "",
     },
@@ -214,22 +218,26 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
       return
     }
     
+    // 注意：同一商品的不同规格可以共用条形码，这是合理的业务场景
+    // 例如：同一款水壶的不同颜色规格可以共用条形码
+    // 后端API已支持这种场景，无需额外检查
+    
     // 转换数据格式以匹配后端API期望的格式
     const productData = {
       product_name: values.product_name,
       classify_level1_classify1_ID: values.classify_id,
-      product_baozhiqi: values.product_baozhiqi,
+      product_baozhiqi: values.product_baozhiqi || null, // 处理undefined值
       local: values.product_details || '',
       brand_brandID: values.brand_id,
       cover_image: values.cover_image || '',
       specs: specs.map(spec => ({
-        spec_type_id: spec.spec_type_id,
-        spec_name: spec.name,
+        spec_type_id: spec.spec_type_id || 1, // 确保有默认值
+        spec_name: spec.name || '',
         spec_value: spec.value || '',
-        barcode: spec.barcode || 0,
+        barcode: spec.barcode || '',
         picture: spec.picture || '',
-        总库存: spec.stock,
-        unit: spec.unit
+        总库存: spec.stock || 0,
+        unit: spec.unit || ''
       }))
     }
     
@@ -343,30 +351,17 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>分类</FormLabel>
-                  <Select 
-                    onValueChange={(value) => field.onChange(Number(value))}
-                    value={field.value ? field.value.toString() : ""}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="请选择分类" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {availableCategories
-                        .filter((category: any) => category.classify1_ID)
-                        .map((category: any) => (
-                          <SelectItem 
-                            key={category.classify1_ID} 
-                            value={category.classify1_ID.toString()}
-                          >
-                            {category.name}
-                            {category.parent_name && ` (${category.parent_name})`}
-                          </SelectItem>
-                        )
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <SimpleTreeSelect
+                      categories={availableCategories}
+                      value={field.value}
+                      onValueChange={(value) => {
+                        console.log('ProductForm - onValueChange:', value) // 调试信息
+                        field.onChange(value)
+                      }}
+                      placeholder="请选择分类"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -377,17 +372,38 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>保质期 (月)</FormLabel>
+                  <FormLabel>保质期 (月) <span className="text-gray-500 text-sm">(可选)</span></FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
                       min="1" 
                       max="120" 
-                      placeholder="请输入保质期" 
-                      value={field.value ?? ""}
-                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                      placeholder="请输入保质期，如无保质期可留空" 
+                      value={field.value === undefined ? "" : field.value}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        if (value === "" || value === null || value === undefined) {
+                          field.onChange(undefined)
+                        } else {
+                          const numValue = Number(value)
+                          if (!isNaN(numValue) && numValue > 0) {
+                            field.onChange(numValue)
+                          } else {
+                            field.onChange(undefined)
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value
+                        if (value === "" || value === null || value === undefined) {
+                          field.onChange(undefined)
+                        }
+                      }}
                     />
                   </FormControl>
+                  <FormDescription>
+                    部分商品（如玩具、用品等）可能没有保质期，可留空
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -533,15 +549,20 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="text-sm font-medium text-gray-700">条形码</label>
+                      <label className="text-sm font-medium text-gray-700">
+                        条形码 <span className="text-gray-500 text-xs">(可选)</span>
+                      </label>
                       <Input
-                        type="number"
+                        type="text"
                         value={spec.barcode || ''}
                         onChange={(e) => updateSpec(spec.id, "barcode", e.target.value)}
-                        placeholder="条形码"
+                        placeholder="输入条形码，如无条形码可留空"
                         className="mt-1"
                         disabled={!spec.spec_type_id}
                       />
+                      <p className="text-xs text-gray-500 mt-1">
+                        同一商品的不同规格可以共用条形码
+                      </p>
                     </div>
                     <div className="md:col-span-3">
                       <label className="text-sm font-medium text-gray-700">规格图片</label>

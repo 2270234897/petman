@@ -68,7 +68,7 @@ def add_customers():
     data = request.get_json()
     
     # 验证必需字段
-    required_fields = ['customername', 'gender', 'address', 'telphone', 'Membershiplevel']
+    required_fields = ['customername', 'gender', 'telphone', 'Membershiplevel']
     if not all(field in data for field in required_fields):
         return jsonify({
             'status': 'error',
@@ -84,17 +84,18 @@ def add_customers():
             # 准备SQL语句
             sql = """
             INSERT INTO customers 
-            (customername, gender, address, telphone, Membershiplevel) 
-            VALUES (%s, %s, %s, %s, %s)
+            (customername, gender, address, telphone, Membershiplevel, membership_balance) 
+            VALUES (%s, %s, %s, %s, %s, %s)
             """
             
             # 执行插入操作
             cursor.execute(sql, (
                 data['customername'],
                 data['gender'],
-                data['address'],
+                data.get('address', '未知地址'),
                 data['telphone'],
-                data['Membershiplevel']
+                data['Membershiplevel'],
+                data.get('membership_balance', 0)
             ))
             
             # 提交事务
@@ -113,9 +114,20 @@ def add_customers():
         # 回滚事务
         if 'connection' in locals():
             connection.rollback()
+        error_message = "数据库操作失败"
+        if e.args[0] == 1062:  # 重复键错误
+            error_message = "数据重复，请检查输入信息"
+        elif e.args[0] == 1452:  # 外键约束错误
+            error_message = "关联数据不存在，请检查关联ID"
+        elif e.args[0] == 1406:  # 数据太长
+            error_message = "输入数据过长，请缩短输入内容"
+        elif e.args[0] == 1048:  # 不能为空
+            error_message = "必填字段不能为空"
+        
         return jsonify({
             'status': 'error',
-            'message': str(e),
+            'message': error_message,
+            'error_code': e.args[0] if e.args else None,
             'detail': str(e)
         }), 500
         
@@ -133,7 +145,7 @@ def delete_customer(customer_id):
 
         with connection.cursor() as cursor:
             # 删除指定客户的SQL语句
-            sql = f"DELETE FROM customers WHERE customerID = {customer_id}"
+            sql = f"DELETE FROM customers WHERE customer_id = {customer_id}"
             cursor.execute(sql)
 
             # 提交更改
@@ -170,7 +182,7 @@ def update_customer(customer_id):
             # 生成更新客户信息的SQL语句
             columns = ', '.join([f"{key} = %s" for key in updated_info])
             values = tuple(updated_info.values()) + (customer_id,)
-            sql = f"UPDATE customers SET {columns} WHERE customerID = %s"
+            sql = f"UPDATE customers SET {columns} WHERE customer_id = %s"
 
             # 执行更新操作
             cursor.execute(sql, values)
@@ -193,6 +205,124 @@ def update_customer(customer_id):
 
     finally:
         # 关闭数据库连接
+        if 'connection' in locals():
+            connection.close()
+
+# 会员充值记录管理接口
+@customers_bp.route('/recharge', methods=['POST'])
+def add_recharge_record():
+    """添加会员充值记录"""
+    data = request.get_json()
+    required_fields = ['customer_id', 'recharge_amount', 'bonus_amount']
+    if not all(field in data for field in required_fields):
+        return jsonify({
+            'status': 'error',
+            'message': 'Missing required fields',
+            'required_fields': required_fields
+        }), 400
+    
+    try:
+        connection = pymysql.connect(**MYSQL_CONFIG)
+        with connection.cursor() as cursor:
+            # 开始事务
+            connection.begin()
+            
+            # 添加充值记录
+            sql = """
+            INSERT INTO membership_recharge 
+            (customer_id, recharge_amount, bonus_amount, recharge_time) 
+            VALUES (%s, %s, %s, %s)
+            """
+            cursor.execute(sql, (
+                data['customer_id'],
+                data['recharge_amount'],
+                data.get('bonus_amount', 0),
+                datetime.now()
+            ))
+            
+            # 更新客户余额
+            update_sql = """
+            UPDATE customers 
+            SET membership_balance = membership_balance + %s + %s 
+            WHERE customer_id = %s
+            """
+            cursor.execute(update_sql, (
+                data['recharge_amount'],
+                data.get('bonus_amount', 0),
+                data['customer_id']
+            ))
+            
+            connection.commit()
+            return jsonify({
+                'status': 'success',
+                'message': '充值成功'
+            }), 201
+            
+    except Exception as e:
+        if connection:
+            connection.rollback()
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+    finally:
+        if 'connection' in locals():
+            connection.close()
+
+@customers_bp.route('/recharge/<int:customer_id>', methods=['GET'])
+def get_recharge_records(customer_id):
+    """获取客户充值记录"""
+    try:
+        connection = pymysql.connect(**MYSQL_CONFIG)
+        with connection.cursor() as cursor:
+            sql = """
+            SELECT * FROM membership_recharge 
+            WHERE customer_id = %s 
+            ORDER BY recharge_time DESC
+            """
+            cursor.execute(sql, (customer_id,))
+            records = cursor.fetchall()
+            return jsonify({
+                'status': 'success',
+                'data': records
+            })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+    finally:
+        if 'connection' in locals():
+            connection.close()
+
+@customers_bp.route('/membership-info/<int:customer_id>', methods=['GET'])
+def get_membership_info(customer_id):
+    """获取客户会员信息"""
+    try:
+        connection = pymysql.connect(**MYSQL_CONFIG)
+        with connection.cursor() as cursor:
+            sql = """
+            SELECT customer_id, customername, Membershiplevel, membership_balance 
+            FROM customers 
+            WHERE customer_id = %s
+            """
+            cursor.execute(sql, (customer_id,))
+            customer = cursor.fetchone()
+            if not customer:
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Customer not found'
+                }), 404
+            return jsonify({
+                'status': 'success',
+                'data': customer
+            })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+    finally:
         if 'connection' in locals():
             connection.close()
 

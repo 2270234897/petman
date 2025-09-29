@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -10,11 +10,11 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select"
-import { useInventoryItems, useDealers, useCreateStockInRecord } from "@/hooks/useApi"
-import { Package, Plus, Trash2, Info, Loader2 } from "lucide-react"
+import { useInventoryItems, useDealers, useUpdateStockInRecord } from "@/hooks/useApi"
+import { Package, Plus, Trash2, Info, Loader2, Save, X } from "lucide-react"
 
 // 定义表单数据类型
-interface StockOperationFormValues {
+interface StockEditFormValues {
   dealer_id: number | undefined
   stock_in_date: string
   items: Array<{
@@ -22,36 +22,33 @@ interface StockOperationFormValues {
     quantity: number
     price_in: number
     product_date?: string
+    item_id?: number // 用于编辑时标识现有明细
   }>
   operation_type: "in" | "out"
   reason?: string
 }
 
-interface StockOperationFormProps {
-  onSubmit: (values: StockOperationFormValues) => void
+interface StockEditFormProps {
+  record: any
+  onSubmit: (values: StockEditFormValues) => void
   onCancel: () => void
-  operationType?: "in" | "out"
-  initialData?: any
 }
 
-export function StockOperationForm({ onSubmit, onCancel, operationType = "in", initialData }: StockOperationFormProps) {
-  // const [selectedSpecId, setSelectedSpecId] = useState<number | null>(null)
-  const [formData, setFormData] = useState<StockOperationFormValues>({
-    dealer_id: initialData?.dealer_id || undefined,
-    stock_in_date: initialData?.stock_in_date ? new Date(initialData.stock_in_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
-    items: initialData?.items || [],
-    operation_type: operationType,
-    reason: initialData?.reason || "",
+export function StockEditForm({ record, onSubmit, onCancel }: StockEditFormProps) {
+  const [formData, setFormData] = useState<StockEditFormValues>({
+    dealer_id: record?.dealer_id || undefined,
+    stock_in_date: record?.stock_in_date ? new Date(record.stock_in_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+    items: record?.items || [],
+    operation_type: "in",
+    reason: record?.reason || "",
   })
   
   const { data: specsData } = useInventoryItems()
   const { data: dealersData } = useDealers()
-  const createStockInRecord = useCreateStockInRecord()
+  const updateStockInRecord = useUpdateStockInRecord()
   
   const allSpecs = specsData?.data || []
   const dealers = dealersData?.data || []
-  // 暂时禁用历史价格功能
-  // const prices = historicalPrices?.data || []
   
   // 添加商品到列表
   const addItem = () => {
@@ -61,7 +58,7 @@ export function StockOperationForm({ onSubmit, onCancel, operationType = "in", i
         spec_id: 0,
         quantity: 1,
         price_in: 0,
-        product_date: "", // 生产日期默认为空，可选填写
+        product_date: "",
       }]
     }))
   }
@@ -83,18 +80,6 @@ export function StockOperationForm({ onSubmit, onCancel, operationType = "in", i
       )
     }))
   }
-  
-
-  // 当规格改变时，获取历史价格 (暂时禁用)
-  // const handleSpecChange = (specId: number) => {
-  //   setSelectedSpecId(specId)
-  // }
-
-  // 获取历史价格建议 (暂时禁用)
-  // const getPriceSuggestion = (specId: number) => {
-  //   // 暂时返回null，等待后端API实现
-  //   return null
-  // }
   
   // 提交表单
   const handleSubmit = async (e: React.FormEvent) => {
@@ -132,29 +117,24 @@ export function StockOperationForm({ onSubmit, onCancel, operationType = "in", i
         item_count: formData.items.length,
       }
 
-      if (operationType === "in") {
-        // 使用新的API创建入库记录
-        await createStockInRecord.mutateAsync(submitData)
-        onSubmit(submitData)
-      } else {
-        // 出库操作暂时使用原有逻辑
-        onSubmit(submitData)
-      }
+      await updateStockInRecord.mutateAsync({ 
+        id: record.stock_inID, 
+        data: submitData 
+      })
+      onSubmit(submitData)
     } catch (error) {
-      console.error("提交失败:", error)
-      // 错误处理已在Hook中完成
+      console.error("更新失败:", error)
     }
   }
-  
   
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold">
-          {operationType === "in" ? "新增入库记录" : "新增出库记录"}
+          编辑入库记录 #{record.stock_inID}
         </h2>
         <p className="text-sm text-muted-foreground">
-          {operationType === "in" ? "创建新的入库记录" : "创建新的出库记录"}
+          修改入库单的基本信息和商品明细
         </p>
       </div>
       
@@ -164,7 +144,7 @@ export function StockOperationForm({ onSubmit, onCancel, operationType = "in", i
             <CardHeader>
               <CardTitle>基本信息</CardTitle>
               <CardDescription>
-                填写{operationType === "in" ? "入库" : "出库"}记录的基本信息
+                修改入库记录的基本信息
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -189,7 +169,7 @@ export function StockOperationForm({ onSubmit, onCancel, operationType = "in", i
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">{operationType === "in" ? "入库日期" : "出库日期"} *</label>
+                  <label className="text-sm font-medium">入库日期 *</label>
                   <Input 
                     type="datetime-local"
                     value={formData.stock_in_date}
@@ -207,7 +187,7 @@ export function StockOperationForm({ onSubmit, onCancel, operationType = "in", i
                 <div>
                   <CardTitle>商品明细</CardTitle>
                   <CardDescription>
-                    添加需要{operationType === "in" ? "入库" : "出库"}的商品信息
+                    修改入库单的商品信息
                   </CardDescription>
                 </div>
                 <Button type="button" onClick={addItem} className="btn-vibrant-green">
@@ -238,10 +218,7 @@ export function StockOperationForm({ onSubmit, onCancel, operationType = "in", i
                         <label className="text-sm font-medium">商品规格</label>
                         <Select 
                           value={item.spec_id?.toString() || ""} 
-                          onValueChange={(value) => {
-                            updateItem(index, "spec_id", Number(value))
-                            // handleSpecChange(Number(value)) // 暂时禁用历史价格功能
-                          }}
+                          onValueChange={(value) => updateItem(index, "spec_id", Number(value))}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="选择规格" />
@@ -269,36 +246,24 @@ export function StockOperationForm({ onSubmit, onCancel, operationType = "in", i
                       
                       <div>
                         <label className="text-sm font-medium">单价 (元)</label>
-                        <div className="space-y-2">
-                          <Input 
-                            type="number" 
-                            min="0"
-                            step="0.01"
-                            value={item.price_in || ""}
-                            onChange={(e) => updateItem(index, "price_in", Number(e.target.value))}
-                            placeholder="单价"
-                          />
-                          {/* 历史价格功能暂时禁用，等待后端API实现 */}
-                          <div className="text-xs text-muted-foreground">
-                            💡 历史价格功能将在后端API实现后启用
-                          </div>
-                        </div>
+                        <Input 
+                          type="number" 
+                          min="0"
+                          step="0.01"
+                          value={item.price_in || ""}
+                          onChange={(e) => updateItem(index, "price_in", Number(e.target.value))}
+                          placeholder="单价"
+                        />
                       </div>
                       
                       <div>
                         <label className="text-sm font-medium">生产日期 (可选)</label>
-                        <div className="space-y-1">
-                          <Input 
-                            type="date"
-                            value={item.product_date || ""}
-                            onChange={(e) => updateItem(index, "product_date", e.target.value)}
-                            placeholder="选择生产日期"
-                          />
-                          <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                            <Info className="h-3 w-3" />
-                            <span>部分商品可能没有生产日期</span>
-                          </div>
-                        </div>
+                        <Input 
+                          type="date"
+                          value={item.product_date || ""}
+                          onChange={(e) => updateItem(index, "product_date", e.target.value)}
+                          placeholder="选择生产日期"
+                        />
                       </div>
                     </div>
                     
@@ -333,20 +298,24 @@ export function StockOperationForm({ onSubmit, onCancel, operationType = "in", i
           
           <div className="flex justify-end space-x-4">
             <Button type="button" variant="outline" onClick={onCancel}>
+              <X className="mr-2 h-4 w-4" />
               取消
             </Button>
             <Button 
               type="submit" 
               className="btn-vibrant-green"
-              disabled={createStockInRecord.isPending}
+              disabled={updateStockInRecord.isPending}
             >
-              {createStockInRecord.isPending ? (
+              {updateStockInRecord.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {operationType === "in" ? "创建中..." : "创建中..."}
+                  保存中...
                 </>
               ) : (
-                operationType === "in" ? "创建入库记录" : "创建出库记录"
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  保存修改
+                </>
               )}
             </Button>
           </div>

@@ -442,3 +442,66 @@ export const useStockInRecordDetail = (stockInId: number) => {
     enabled: !!stockInId,
   })
 }
+
+// 历史价格Hook (暂时禁用，等待后端实现)
+// export const useHistoricalPrices = (specId: number) => {
+//   return useQuery({
+//     queryKey: ["historical-prices", specId],
+//     queryFn: () => inventoryApi.getHistoricalPrices(specId).then(res => res.data),
+//     enabled: !!specId,
+//   })
+// }
+
+// 创建入库记录Hook
+export const useCreateStockInRecord = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: inventoryApi.createStockInRecord,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["stock-in-records"] })
+      queryClient.invalidateQueries({ queryKey: ["inventory"] })
+      queryClient.invalidateQueries({ queryKey: ["inventory-items"] })
+      toast.success("入库记录创建成功！")
+    },
+    onError: (error: any) => {
+      console.error("入库记录创建失败:", error);
+      toast.error(error.response?.data?.message || "入库记录创建失败，请重试")
+    },
+  })
+}
+
+// 更新入库记录Hook
+export const useUpdateStockInRecord = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => inventoryApi.updateStockInRecord(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["stock-in-records"] })
+      queryClient.invalidateQueries({ queryKey: ["inventory"] })
+      queryClient.invalidateQueries({ queryKey: ["inventory-items"] })
+      toast.success("入库记录更新成功！")
+    },
+    onError: (error: any) => {
+      console.error("入库记录更新失败:", error);
+      toast.error(error.response?.data?.message || "入库记录更新失败，请重试")
+    },
+  })
+}
+
+// 删除入库记录Hook
+export const useDeleteStockInRecord = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => inventoryApi.deleteStockInRecord(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["stock-in-records"] })
+      queryClient.invalidateQueries({ queryKey: ["inventory"] })
+      queryClient.invalidateQueries({ queryKey: ["inventory-items"] })
+      toast.success("入库记录删除成功！")
+    },
+    onError: (error: any) => {
+      console.error("入库记录删除失败:", error);
+      toast.error(error.response?.data?.message || "入库记录删除失败，请重试")
+    },
+  })
+}

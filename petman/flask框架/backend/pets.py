@@ -34,7 +34,7 @@ def get_all_pets():
             sql = """
             SELECT p.*, c.customername as owner_name 
             FROM pets p
-            JOIN customers c ON p.customers_customerID = c.customerID
+            JOIN customers c ON p.customer_id = c.customer_id
             """
             cursor.execute(sql)
             pets = cursor.fetchall()
@@ -62,8 +62,8 @@ def get_pet(pet_id):
             sql = """
             SELECT p.*, c.customername as owner_name, c.telphone as owner_phone
             FROM pets p
-            JOIN customers c ON p.customers_customerID = c.customerID
-            WHERE p.petID = %s
+            JOIN customers c ON p.customer_id = c.customer_id
+            WHERE p.pet_id = %s
             """
             cursor.execute(sql, (pet_id,))
             pet = cursor.fetchone()
@@ -91,7 +91,7 @@ def add_pet():
     connection = None
     try:
         data = request.get_json()
-        required_fields = ['petname', 'pet_species', 'pet_breeds', 'pet_gender', 'pet_age', 'customers_customerID']
+        required_fields = ['petname', 'pet_species', 'pet_breeds', 'pet_gender', 'pet_age', 'customer_id']
         if not all(field in data for field in required_fields):
             return jsonify({
                 'status': 'error',
@@ -103,8 +103,8 @@ def add_pet():
         with connection.cursor() as cursor:
             sql = """
             INSERT INTO pets 
-            (petname, pet_species, pet_breeds, pet_gender, pet_age, neuter, pet_character, customers_customerID)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            (petname, pet_species, pet_breeds, pet_gender, pet_age, neuter, pet_character, customer_id, pet_image)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
             cursor.execute(sql, (
                 data['petname'],
@@ -112,16 +112,17 @@ def add_pet():
                 data['pet_breeds'],
                 data['pet_gender'],
                 data['pet_age'],
-                data.get('neuter'),
+                bool(data.get('neuter', False)),
                 data.get('pet_character'),
-                data['customers_customerID']
+                data['customer_id'],
+                data.get('pet_image', '')
             ))
             connection.commit()
             new_id = cursor.lastrowid
             return jsonify({
                 'status': 'success',
                 'message': 'Pet added successfully',
-                'petID': new_id
+                'pet_id': new_id
             }), 201
     except pymysql.Error as e:
         if connection:
@@ -155,30 +156,42 @@ def update_pet(pet_id):
 
         connection = pymysql.connect(**MYSQL_CONFIG)
         with connection.cursor() as cursor:
+            # 首先获取当前宠物信息
+            check_sql = "SELECT * FROM pets WHERE pet_id = %s"
+            cursor.execute(check_sql, (pet_id,))
+            current_pet = cursor.fetchone()
+            
+            if not current_pet:
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Pet not found'
+                }), 404
+            
+            # 检查是否有实际变更
+            has_changes = False
+            for field in ['petname', 'pet_species', 'pet_breeds', 'pet_gender', 'pet_age', 'neuter', 'pet_character', 'customer_id', 'pet_image']:
+                if field in data and str(data[field]) != str(current_pet.get(field, '')):
+                    has_changes = True
+                    break
+            
+            if not has_changes:
+                return jsonify({
+                    'status': 'info',
+                    'message': 'No changes detected, pet information remains the same'
+                }), 200
+            
             # 构建动态更新SQL
             set_clause = []
             params = []
-            for field in ['petname', 'pet_species', 'pet_breeds', 'pet_gender', 'pet_age', 'neuter', 'pet_character', 'customers_customerID']:
+            for field in ['petname', 'pet_species', 'pet_breeds', 'pet_gender', 'pet_age', 'neuter', 'pet_character', 'customer_id', 'pet_image']:
                 if field in data:
                     set_clause.append(f"{field} = %s")
                     params.append(data[field])
             
-            if not set_clause:
-                return jsonify({
-                    'status': 'error',
-                    'message': 'No fields to update'
-                }), 400
-
             params.append(pet_id)
-            sql = f"UPDATE pets SET {', '.join(set_clause)} WHERE petID = %s"
+            sql = f"UPDATE pets SET {', '.join(set_clause)} WHERE pet_id = %s"
             cursor.execute(sql, params)
             connection.commit()
-            
-            if cursor.rowcount == 0:
-                return jsonify({
-                    'status': 'error',
-                    'message': 'Pet not found or no changes made'
-                }), 404
             
             return jsonify({
                 'status': 'success',
@@ -209,7 +222,7 @@ def delete_pet(pet_id):
     try:
         connection = pymysql.connect(**MYSQL_CONFIG)
         with connection.cursor() as cursor:
-            sql = "DELETE FROM pets WHERE petID = %s"
+            sql = "DELETE FROM pets WHERE pet_id = %s"
             cursor.execute(sql, (pet_id,))
             connection.commit()
             
@@ -251,7 +264,7 @@ def get_pets_by_customer(customer_id):
             sql = """
             SELECT p.* 
             FROM pets p
-            WHERE p.customers_customerID = %s
+            WHERE p.customer_id = %s
             """
             cursor.execute(sql, (customer_id,))
             pets = cursor.fetchall()

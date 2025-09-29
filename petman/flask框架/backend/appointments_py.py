@@ -46,8 +46,8 @@ def get_appointments():
             sql = """
             SELECT a.*, c.customername, p.petname, s.service_name 
             FROM appointments a
-            JOIN customers c ON a.customerID = c.customerID
-            JOIN pets p ON a.petID = p.petID
+            JOIN customers c ON a.customer_id = c.customer_id
+            JOIN pets p ON a.pet_id = p.pet_id
             JOIN services s ON a.service_id = s.service_id
             """
             
@@ -104,7 +104,7 @@ def add_appointment():
         }), 400
     
     data = request.get_json()
-    required_fields = ['customerID', 'petID', 'service_id', 'appointment_date', 'appointment_time']
+    required_fields = ['customer_id', 'pet_id', 'service_id', 'appointment_date', 'appointment_time']
     
     if not all(field in data for field in required_fields):
         return jsonify({
@@ -119,13 +119,13 @@ def add_appointment():
         with connection.cursor() as cursor:
             sql = """
             INSERT INTO appointments 
-            (customerID, petID, service_id, appointment_date, appointment_time, status, notes)
+            (customer_id, pet_id, service_id, appointment_date, appointment_time, status, notes)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
             
             cursor.execute(sql, (
-                data['customerID'],
-                data['petID'],
+                data['customer_id'],
+                data['pet_id'],
                 data['service_id'],
                 data['appointment_date'],
                 data['appointment_time'],
@@ -172,7 +172,7 @@ def update_appointment(appointment_id):
             set_clause = []
             params = []
             
-            for field in ['customerID', 'petID', 'service_id', 'appointment_date', 
+            for field in ['customer_id', 'pet_id', 'service_id', 'appointment_date', 
                          'appointment_time', 'status', 'notes']:
                 if field in data:
                     set_clause.append(f"{field} = %s")

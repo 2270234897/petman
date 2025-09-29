@@ -91,11 +91,11 @@ export function InventoryProducts() {
     }
   }
 
-  const handleFormSubmit = (productData: any, specs: any[]) => {
+  const handleFormSubmit = (productData: any) => {
     if (editingProduct) {
       // 更新商品
       updateProduct(
-        { id: editingProduct.productID, data: { ...productData, specs } },
+        { id: editingProduct.productID, data: productData },
         {
           onSuccess: () => {
             toast.success("商品更新成功！")
@@ -110,7 +110,7 @@ export function InventoryProducts() {
       )
     } else {
       // 创建新商品
-      createProduct({ ...productData, specs }, {
+      createProduct(productData, {
         onSuccess: (response: any) => {
           toast.success("商品添加成功！")
           setShowAddForm(false)
@@ -136,13 +136,23 @@ export function InventoryProducts() {
   const getProductCoverImage = (product: any) => {
     // 优先使用商品封面图片，如果没有则使用第一个有图片的规格的图片
     if (product.cover_image && product.cover_image.trim()) {
-      return product.cover_image
+      // 检查是否是完整的URL
+      if (product.cover_image.startsWith('http://') || product.cover_image.startsWith('https://')) {
+        return product.cover_image
+      }
+      // 如果是相对路径，添加正确的路径前缀
+      return `/api/static/${product.cover_image}`
     }
     
     if (product.specs && product.specs.length > 0) {
       const specWithImage = product.specs.find((spec: any) => spec.picture && spec.picture.trim())
       if (specWithImage) {
-        return specWithImage.picture
+        // 检查是否是完整的URL
+        if (specWithImage.picture.startsWith('http://') || specWithImage.picture.startsWith('https://')) {
+          return specWithImage.picture
+        }
+        // 如果是相对路径，添加正确的路径前缀
+        return `/api/static/${specWithImage.picture}`
       }
     }
     return null
@@ -263,7 +273,7 @@ export function InventoryProducts() {
                                 <Badge variant="outline" className="text-xs">
                                   {item.classify_name}
                                 </Badge>
-                                <span>保质期: {item.product_baozhiqi}个月</span>
+                                <span>保质期: {item.product_baozhiqi ? `${item.product_baozhiqi}个月` : '无保质期'}</span>
                                 <span>总库存: {totalStock}</span>
                                 {item.local && (
                                   <span className="text-gray-500">| {item.local}</span>
@@ -348,7 +358,11 @@ export function InventoryProducts() {
                                             <span>图片:</span>
                                             <div className="w-8 h-8 rounded overflow-hidden bg-white border">
                                               <img 
-                                                src={spec.picture} 
+                                                src={
+                                                  spec.picture.startsWith('http://') || spec.picture.startsWith('https://') 
+                                                    ? spec.picture 
+                                                    : `/api/static/${spec.picture}`
+                                                } 
                                                 alt={spec.spec_name}
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => {
