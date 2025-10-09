@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}宠物管理 - 萌宠小屋{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1><i class="fas fa-paw"></i> 宠物管理</h1>
+    
+    <div class="card">
+        <div class="action-bar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="搜索宠物..." id="searchInput">
+            </div>
+            <button class="btn btn-primary" id="addPetBtn">
+                <i class="fas fa-plus"></i> 添加宠物
+            </button>
+        </div>
+        
+        <table id="petTable">
+            <thead>
+                <tr>
+                    <th>宠物ID</th>
+                    <th>宠物名称</th>
+                    <th>种类</th>
+                    <th>品种</th>
+                    <th>性别</th>
+                    <th>年龄</th>
+                    <th>主人</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="petTableBody">
+                <!-- 宠物数据将通过JavaScript动态加载 -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 添加/编辑宠物模态框 -->
+    <div class="modal" id="petModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">添加新宠物</h3>
+                <button class="close-btn" id="closeModalBtn">&times;</button>
+            </div>
+            
+            <form id="petForm">
+                <input type="hidden" id="petId">
+                
+                <div class="form-group">
+                    <label for="petname">宠物名称 *</label>
+                    <input type="text" id="petname" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pet_species">种类 *</label>
+                    <select id="pet_species" required>
+                        <option value="">请选择</option>
+                        <option value="狗">狗</option>
+                        <option value="猫">猫</option>
+                        <option value="鸟">鸟</option>
+                        <option value="兔">兔</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pet_breeds">品种 *</label>
+                    <input type="text" id="pet_breeds" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pet_gender">性别 *</label>
+                    <select id="pet_gender" required>
+                        <option value="">请选择</option>
+                        <option value="公">公</option>
+                        <option value="母">母</option>
+                        <option value="未知">未知</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pet_age">年龄(岁) *</label>
+                    <input type="number" id="pet_age" min="0" max="30" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="neuter">是否绝育</label>
+                    <select id="neuter">
+                        <option value="">未知</option>
+                        <option value="是">是</option>
+                        <option value="否">否</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pet_character">性格特点</label>
+                    <textarea id="pet_character" rows="2"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="customers_customerID">主人 *</label>
+                    <select id="customers_customerID" required>
+                        <option value="">请选择主人</option>
+                        <!-- 主人选项将通过JavaScript动态加载 -->
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn" id="cancelBtn">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 加载指示器 -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner"></div>
+    </div>
+
+<script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pets.js') }}"></script>
+{% endblock %}

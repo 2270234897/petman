@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>库存管理 - 宠物管理系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --info: #4895ef;
+            --warning: #f72585;
+            --danger: #e63946;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --sidebar-width: 250px;
+            --header-height: 60px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f7fb;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            color: white;
+            height: 100vh;
+            position: fixed;
+            transition: var(--transition);
+            z-index: 1000;
+            box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            height: var(--header-height);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h2 {
+            font-weight: 500;
+            font-size: 1.4rem;
+            margin-left: 10px;
+        }
+
+        .sidebar-menu {
+            padding: 15px 0;
+        }
+
+        .menu-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: var(--transition);
+            border-left: 4px solid transparent;
+        }
+
+        .menu-item:hover, .menu-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            border-left: 4px solid white;
+        }
+
+        .menu-item i {
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            transition: var(--transition);
+        }
+
+        .header {
+            height: var(--header-height);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .user-actions {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-actions .notification {
+            margin-right: 20px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 10px;
+        }
+
+        /* Content Area */
+        .content {
+            padding: 30px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-title h2 {
+            font-size: 1.8rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: var(--transition);
+        }
+
+        .tab.active {
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .search-box {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px 0 0 6px;
+            font-size: 1rem;
+        }
+
+        .search-box button {
+            padding: 10px 20px;
+            background: var(--info);
+            color: white;
+            border: none;
+            border-radius: 0 6px 6px 0;
+            cursor: pointer;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h3 {
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            font-weight: 500;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .low-stock {
+            color: var(--danger);
+            font-weight: 500;
+        }
+
+        .action-buttons button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            margin: 0 5px;
+            color: #6c757d;
+            transition: var(--transition);
+        }
+
+        .action-buttons button:hover {
+            color: var(--primary);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6c757d;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            margin-right: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 70px;
+            }
+            .sidebar-header h2, .menu-text {
+                display: none;
+            }
+            .sidebar-header {
+                justify-content: center;
+                padding: 20px 0;
+            }
+            .menu-item {
+                justify-content: center;
+                padding: 15px;
+            }
+            .menu-item i {
+                margin-right: 0;
+                font-size: 1.2rem;
+            }
+            .main-content {
+                margin-left: 70px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 15px;
+            }
+            .content {
+                padding: 15px;
+            }
+            .tabs {
+                overflow-x: auto;
+            }
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-paw fa-2x"></i>
+                <h2>宠物管理系统</h2>
+            </div>
+            <div class="sidebar-menu">
+                <div class="menu-item">
+                    <i class="fas fa-home"></i>
+                    <span class="menu-text">仪表板</span>
+                </div>
+                <div class="menu-item">
+                    <i class="fas fa-dog"></i>
+                    <span class="menu-text">宠物管理</span>
+                </div>
+                <div class="menu-item">
+                    <i class="fas fa-user-friends"></i>
+                    <span class="menu-text">客户管理</span>
+                </div>
+                <div class="menu-item">
+                    <i class="fas fa-calendar-check"></i>
+                    <span class="menu-text">预约管理</span>
+                </div>
+                <div class="menu-item active">
+                    <i class="fas fa-boxes"></i>
+                    <span class="menu-text">库存管理</span>
+                </div>
+                <div class="menu-item">
+                    <i class="fas fa-cog"></i>
+                    <span class="menu-text">系统设置</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-title">
+                    <h1>库存管理</h1>
+                </div>
+                <div class="user-actions">
+                    <div class="notification">
+                        <i class="far fa-bell fa-lg"></i>
+                        <span class="notification-badge">3</span>
+                    </div>
+                    <div class="user-profile">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span>管理员</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h2>库存管理</h2>
+                    </div>
+                    <button class="btn btn-primary" id="addStockInBtn">
+                        <i class="fas fa-plus"></i> 新增入库
+                    </button>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab active" data-tab="products">产品管理</div>
+                    <div class="tab" data-tab="specs">规格管理</div>
+                    <div class="tab" data-tab="brands">品牌管理</div>
+                    <div class="tab" data-tab="classify">分类管理</div>
+                    <div class="tab" data-tab="dealers">经销商管理</div>
+                    <div class="tab" data-tab="stockIn">入库记录</div>
+                </div>
+
+                <!-- Products Tab -->
+                <div class="tab-content active" id="products-tab">
+                    <div class="search-box">
+                        <input type="text" id="productSearch" placeholder="搜索产品...">
+                        <button><i class="fas fa-search"></i> 搜索</button>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>产品列表</h3>
+                            <button class="btn btn-primary" id="addProductBtn">
+                                <i class="fas fa-plus"></i> 添加产品
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>产品名称</th>
+                                            <th>分类</th>
+                                            <th>品牌</th>
+                                            <th>保质期(月)</th>
+                                            <th>产地</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="productsTableBody">
+                                        <!-- Products will be loaded here by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Specs Tab -->
+                <div class="tab-content" id="specs-tab">
+                    <div class="search-box">
+                        <input type="text" id="specSearch" placeholder="搜索规格...">
+                        <button><i class="fas fa-search"></i> 搜索</button>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>规格列表</h3>
+                            <button class="btn btn-primary" id="addSpecBtn">
+                                <i class="fas fa-plus"></i> 添加规格
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>产品</th>
+                                            <th>规格名称</th>
+                                            <th>规格值</th>
+                                            <th>条形码</th>
+                                            <th>总库存</th>
+                                            <th>状态</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="specsTableBody">
+                                        <!-- Specs will be loaded here by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Brands Tab -->
+                <div class="tab-content" id="brands-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>品牌列表</h3>
+                            <button class="btn btn-primary" id="addBrandBtn">
+                                <i class="fas fa-plus"></i> 添加品牌
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>品牌名称</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="brandsTableBody">
+                                        <!-- Brands will be loaded here by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Classify Tab -->
+                <div class="tab-content" id="classify-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>分类列表</h3>
+                            <button class="btn btn-primary" id="addClassifyBtn">
+                                <i class="fas fa-plus"></i> 添加分类
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>分类名称</th>
+                                            <th>父级分类</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="classifyTableBody">
+                                        <!-- Classify items will be loaded here by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dealers Tab -->
+                <div class="tab-content" id="dealers-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>经销商列表</h3>
+                            <button class="btn btn-primary" id="addDealerBtn">
+                                <i class="fas fa-plus"></i> 添加经销商
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>经销商名称</th>
+                                            <th>联系电话</th>
+                                            <th>地址</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dealersTableBody">
+                                        <!-- Dealers will be loaded here by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stock In Tab -->
+                <div class="tab-content" id="stockIn-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>入库记录</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>入库ID</th>
+                                            <th>经销商</th>
+                                            <th>入库日期</th>
+                                            <th>总金额</th>
+                                            <th>产品</th>
+                                            <th>规格</th>
+                                            <th>数量</th>
+                                            <th>单价</th>
+                                            <th>生产日期</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="stockInTableBody">
+                                        <!-- Stock in records will be loaded here by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Product Modal -->
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="productModalTitle">添加产品</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm">
+                    <input type="hidden" id="productId">
+                    <div class="form-group">
+                        <label for="productName">产品名称</label>
+                        <input type="text" id="productName" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="classifyId">分类</label>
+                            <select id="classifyId" required>
+                                <option value="">请选择分类</option>
+                                <!-- Classify options will be loaded here -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="brandId">品牌</label>
+                            <select id="brandId" required>
+                                <option value="">请选择品牌</option>
+                                <!-- Brand options will be loaded here -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="productBaozhiqi">保质期(月)</label>
+                            <input type="number" id="productBaozhiqi" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="local">产地</label>
+                            <input type="text" id="local">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelProductBtn">取消</button>
+                <button class="btn btn-primary" id="saveProductBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Spec Modal -->
+    <div class="modal" id="specModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="specModalTitle">添加规格</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="specForm">
+                    <input type="hidden" id="specId">
+                    <div class="form-group">
+                        <label for="productIdSpec">产品</label>
+                        <select id="productIdSpec" required>
+                            <option value="">请选择产品</option>
+                            <!-- Product options will be loaded here -->
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="specName">规格名称</label>
+                            <input type="text" id="specName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="specValue">规格值</label>
+                            <input type="text" id="specValue" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="barcode">条形码</label>
+                            <input type="text" id="barcode">
+                        </div>
+                        <div class="form-group">
+                            <label for="totalStock">总库存</label>
+                            <input type="number" id="totalStock" min="0" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="picture">图片</label>
+                        <input type="text" id="picture">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelSpecBtn">取消</button>
+                <button class="btn btn-primary" id="saveSpecBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Brand Modal -->
+    <div class="modal" id="brandModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="brandModalTitle">添加品牌</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="brandForm">
+                    <input type="hidden" id="brandId">
+                    <div class="form-group">
+                        <label for="brandName">品牌名称</label>
+                        <input type="text" id="brandName" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelBrandBtn">取消</button>
+                <button class="btn btn-primary" id="saveBrandBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Classify Modal -->
+    <div class="modal" id="classifyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="classifyModalTitle">添加分类</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="classifyForm">
+                    <input type="hidden" id="classifyIdModal">
+                    <div class="form-group">
+                        <label for="classifyName">分类名称</label>
+                        <input type="text" id="classifyName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="parentId">父级分类</label>
+                        <select id="parentId">
+                            <option value="">无父级分类</option>
+                            <!-- Parent classify options will be loaded here -->
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelClassifyBtn">取消</button>
+                <button class="btn btn-primary" id="saveClassifyBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Dealer Modal -->
+    <div class="modal" id="dealerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="dealerModalTitle">添加经销商</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="dealerForm">
+                    <input type="hidden" id="dealerId">
+                    <div class="form-group">
+                        <label for="dealerName">经销商名称</label>
+                        <input type="text" id="dealerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dealerTel">联系电话</label>
+                        <input type="text" id="dealerTel">
+                    </div>
+                    <div class="form-group">
+                        <label for="dealerAddress">地址</label>
+                        <input type="text" id="dealerAddress">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelDealerBtn">取消</button>
+                <button class="btn btn-primary" id="saveDealerBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Stock In Modal -->
+    <div class="modal" id="stockInModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>新增入库</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="stockInForm">
+                    <div class="form-group">
+                        <label for="dealerIdStockIn">经销商</label>
+                        <select id="dealerIdStockIn" required>
+                            <option value="">请选择经销商</option>
+                            <!-- Dealer options will be loaded here -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="totalAmount">总金额</label>
+                        <input type="number" id="totalAmount" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>入库明细</label>
+                        <div id="stockInItems">
+                            <!-- Stock in items will be added here dynamically -->
+                        </div>
+                        <button type="button" class="btn btn-secondary" id="addStockInItemBtn">
+                            <i class="fas fa-plus"></i> 添加明细
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelStockInBtn">取消</button>
+                <button class="btn btn-primary" id="saveStockInBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const tabContents = document.querySelectorAll('.tab-content');
+        const tabs = document.querySelectorAll('.tab');
+        const modals = document.querySelectorAll('.modal');
+        const closeModalButtons = document.querySelectorAll('.close-modal');
+
+        // Event Listeners for Tabs
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and contents
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Show corresponding content
+                const tabName = tab.getAttribute('data-tab');
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+            });
+        });
+
+        // Close modals when clicking the close button
+        closeModalButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const modal = button.closest('.modal');
+                modal.style.display = 'none';
+            });
+        });
+
+        // Close modals when clicking outside
+        window.addEventListener('click', (e) => {
+            modals.forEach(modal => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProducts();
+            loadSpecs();
+            loadBrands();
+            loadClassify();
+            loadDealers();
+            loadStockInRecords();
+            loadDropdownData();
+        });
+
+        // Load products
+        function loadProducts() {
+            // In a real application, this would fetch from your API
+            // For demo purposes, we'll use sample data
+            const sampleProducts = [
+                { productID: 1, product_name: '皇家小型犬成犬粮', classify_name: '狗粮', brandname: '皇家', product_baozhiqi: 12, local: '法国' },
+                { productID: 2, product_name: '宝路牛肉味狗粮', classify_name: '狗粮', brandname: '宝路', product_baozhiqi: 18, local: '中国' },
+                { productID: 3, product_name: '雀冠猫粮', classify_name: '猫粮', brandname: '雀巢', product_baozhiqi: 24, local: '美国' }
+            ];
+            
+            displayProducts(sampleProducts);
+        }
+
+        // Display products
+        function displayProducts(products) {
+            const tbody = document.getElementById('productsTableBody');
+            tbody.innerHTML = '';
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.productID}</td>
+                    <td>${product.product_name}</td>
+                    <td>${product.classify_name}</td>
+                    <td>${product.brandname}</td>
+                    <td>${product.product_baozhiqi}</td>
+                    <td>${product.local}</td>
+                    <td class="action-buttons">
+                        <button onclick="editProduct(${product.productID})" title="编辑"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteProduct(${product.productID})" title="删除"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Load specs
+        function loadSpecs() {
+            // In a real application, this would fetch from your API
+            // For demo purposes, we'll use sample data
+            const sampleSpecs = [
+                { specID: 1, product_name: '皇家小型犬成犬粮', spec_name: '重量', spec_value: '3kg', barcode: '100001', 总库存: 50 },
+                { specID: 2, product_name: '皇家小型犬成犬粮', spec_name: '重量', spec_value: '10kg', barcode: '100002', 总库存: 30 },
+                { specID: 3, product_name: '宝路牛肉味狗粮', spec_name: '重量', spec_value: '2kg', barcode: '100003', 总库存: 40 }
+            ];
+            
+            displaySpecs(sampleSpecs);
+        }
+
+        // Display specs
+        function displaySpecs(specs) {
+            const tbody = document.getElementById('specsTableBody');
+            tbody.innerHTML = '';
+            specs.forEach(spec => {
+                // Check if stock is low
+                const stockClass = spec.总库存 < 20 ? 'low-stock' : '';
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${spec.specID}</td>
+                    <td>${spec.product_name}</td>
+                    <td>${spec.spec_name}</td>
+                    <td>${spec.spec_value}</td>
+                    <td>${spec.barcode}</td>
+                    <td class="${stockClass}">${spec.总库存}</td>
+                    <td>${spec.总库存 > 0 ? '正常' : '缺货'}</td>
+                    <td class="action-buttons">
+                        <button onclick="editSpec(${spec.specID})" title="编辑"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteSpec(${spec.specID})" title="删除"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Load brands
+        function loadBrands() {
+            // In a real application, this would fetch from your API
+            // For demo purposes, we'll use sample data
+            const sampleBrands = [
+                { brandID: 1, brandname: '皇家' },
+                { brandID: 2, brandname: '宝路' },
+                { brandID: 3, brandname: '雀巢' }
+            ];
+            
+            displayBrands(sampleBrands);
+        }
+
+        // Display brands
+        function displayBrands(brands) {
+            const tbody = document.getElementById('brandsTableBody');
+            tbody.innerHTML = '';
+            brands.forEach(brand => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${brand.brandID}</td>
+                    <td>${brand.brandname}</td>
+                    <td class="action-buttons">
+                        <button onclick="editBrand(${brand.brandID})" title="编辑"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteBrand(${brand.brandID})" title="删除"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Load classify
+        function loadClassify() {
+            // In a real application, this would fetch from your API
+            // For demo purposes, we'll use sample data
+            const sampleClassify = [
+                { classify1_ID: 1, name: '狗粮', parent_name: null },
+                { classify1_ID: 2, name: '猫粮', parent_name: null },
+                { classify1_ID: 3, name: '宠物玩具', parent_name: null }
+            ];
+            
+            displayClassify(sampleClassify);
+        }
+
+        // Display classify
+        function displayClassify(classify) {
+            const tbody = document.getElementById('classifyTableBody');
+            tbody.innerHTML = '';
+            classify.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.classify1_ID}</td>
+                    <td>${item.name}</td>
+                    <td>${item.parent_name || '无'}</td>
+                    <td class="action-buttons">
+                        <button onclick="editClassify(${item.classify1_ID})" title="编辑"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteClassify(${item.classify1_ID})" title="删除"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Load dealers
+        function loadDealers() {
+            // In a real application, this would fetch from your API
+            // For demo purposes, we'll use sample data
+            const sampleDealers = [
+                { dealerID: 1, dealer_name: '北京宠物用品批发', dealer_tel: '1380013800', dealer_address: '北京市朝阳区' },
+                { dealerID: 2, dealer_name: '上海宠物食品公司', dealer_tel: '1390013900', dealer_address: '上海市浦东新区' }
+            ];
+            
+            displayDealers(sampleDealers);
+        }
+
+        // Display dealers
+        function displayDealers(dealers) {
+            const tbody = document.getElementById('dealersTableBody');
+            tbody.innerHTML = '';
+            dealers.forEach(dealer => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${dealer.dealerID}</td>
+                    <td>${dealer.dealer_name}</td>
+                    <td>${dealer.dealer_tel}</td>
+                    <td>${dealer.dealer_address}</td>
+                    <td class="action-buttons">
+                        <button onclick="editDealer(${dealer.dealerID})" title="编辑"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteDealer(${dealer.dealerID})" title="删除"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Load stock in records
+        function loadStockInRecords() {
+            // In a real application, this would fetch from your API
+            // For demo purposes, we'll use sample data
+            const sampleRecords = [
+                { 
+                    stock_inID: 1, 
+                    dealer_name: '北京宠物用品批发', 
+                    stock_in_date: '2024-01-15', 
+                    total_amount: 5000.00,
+                    product_name: '皇家小型犬成犬粮',
+                    spec_name: '重量',
+                    spec_value: '3kg',
+                    quantity: 20,
+                    price_in: 200,
+                    product_date: '2024-06-01'
+                }
+            ];
+            
+            displayStockInRecords(sampleRecords);
+        }
+
+        // Display stock in records
+        function displayStockInRecords(records) {
+            const tbody = document.getElementById('stockInTableBody');
+            tbody.innerHTML = '';
+            records.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.stock_inID}</td>
+                    <td>${record.dealer_name}</td>
+                    <td>${record.stock_in_date}</td>
+                    <td>${record.total_amount}</td>
+                    <td>${record.product_name}</td>
+                    <td>${record.spec_name} ${record.spec_value}</td>
+                    <td>${record.quantity}</td>
+                    <td>${record.price_in}</td>
+                    <td>${record.product_date}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Load dropdown data
+        function loadDropdownData() {
+            // In a real application, this would fetch from your API
+            // For demo purposes, we'll use sample data
+            
+            // Load classify options
+            const sampleClassify = [
+                { classify1_ID: 1, name: '狗粮' },
+                { classify1_ID: 2, name: '猫粮' },
+                { classify1_ID: 3, name: '宠物玩具' }
+            ];
+            
+            const classifySelects = document.querySelectorAll('#classifyId, #parentId');
+            sampleClassify.forEach(item => {
+                classifySelects.forEach(select => {
+                    const option = document.createElement('option');
+                    option.value = item.classify1_ID;
+                    option.textContent = item.name;
+                    select.appendChild(option);
+                });
+            });
+            
+            // Load brand options
+            const sampleBrands = [
+                { brandID: 1, brandname: '皇家' },
+                { brandID: 2, brandname: '宝路' },
+                { brandID: 3, brandname: '雀巢' }
+            ];
+            
+            const brandSelect = document.getElementById('brandId');
+            sampleBrands.forEach(brand => {
+                const option = document.createElement('option');
+                option.value = brand.brandID;
+                option.textContent = brand.brandname;
+                brandSelect.appendChild(option);
+            });
+            
+            // Load product options for specs
+            const sampleProducts = [
+                { productID: 1, product_name: '皇家小型犬成犬粮' },
+                { productID: 2, product_name: '宝路牛肉味狗粮' },
+                { productID: 3, product_name: '雀冠猫粮' }
+            ];
+            
+            const productSpecSelect = document.getElementById('productIdSpec');
+            sampleProducts.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.productID;
+                option.textContent = product.product_name;
+                productSpecSelect.appendChild(option);
+            });
+            
+            // Load dealer options for stock in
+            const sampleDealers = [
+                { dealerID: 1, dealer_name: '北京宠物用品批发' },
+                { dealerID: 2, dealer_name: '上海宠物食品公司' }
+            ];
+            
+            const dealerStockInSelect = document.getElementById('dealerIdStockIn');
+            sampleDealers.forEach(dealer => {
+                const option = document.createElement('option');
+                option.value = dealer.dealerID;
+                option.textContent = dealer.dealer_name;
+                dealerStockInSelect.appendChild(option);
+            });
+        }
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Product functions
+        function openAddProductModal() {
+            document.getElementById('productModalTitle').textContent = '添加产品';
+            document.getElementById('productForm').reset();
+            document.getElementById('productId').value = '';
+            openModal('productModal');
+        }
+
+        function editProduct(productId) {
+            document.getElementById('productModalTitle').textContent = '编辑产品';
+            // In a real application, you would load the product data from the server
+            openModal('productModal');
+        }
+
+        function deleteProduct(productId) {
+            if (confirm('确定要删除这个产品吗？')) {
+                // In a real application, you would send a DELETE request to your API
+                alert(`删除产品 ID: ${productId}`);
+            }
+        }
+
+        // Spec functions
+        function openAddSpecModal() {
+            document.getElementById('specModalTitle').textContent = '添加规格';
+            document.getElementById('specForm').reset();
+            document.getElementById('specId').value = '';
+            openModal('specModal');
+        }
+
+        function editSpec(specId) {
+            document.getElementById('specModalTitle').textContent = '编辑规格';
+            // In a real application, you would load the spec data from the server
+            openModal('specModal');
+        }
+
+        function deleteSpec(specId) {
+            if (confirm('确定要删除这个规格吗？')) {
+                // In a real application, you would send a DELETE request to your API
+                alert(`删除规格 ID: ${specId}`);
+            }
+        }
+
+        // Brand functions
+        function openAddBrandModal() {
+            document.getElementById('brandModalTitle').textContent = '添加品牌';
+            document.getElementById('brandForm').reset();
+            document.getElementById('brandId').value = '';
+            openModal('brandModal');
+        }
+
+        function editBrand(brandId) {
+            document.getElementById('brandModalTitle').textContent = '编辑品牌';
+            // In a real application, you would load the brand data from the server
+            openModal('brandModal');
+        }
+
+        function deleteBrand(brandId) {
+            if (confirm('确定要删除这个品牌吗？')) {
+                // In a real application, you would send a DELETE request to your API
+                alert(`删除品牌 ID: ${brandId}`);
+            }
+        }
+
+        // Classify functions
+        function openAddClassifyModal() {
+            document.getElementById('classifyModalTitle').textContent = '添加分类';
+            document.getElementById('classifyForm').reset();
+            document.getElementById('classifyIdModal').value = '';
+            openModal('classifyModal');
+        }
+
+        function editClassify(classifyId) {
+            document.getElementById('classifyModalTitle').textContent = '编辑分类';
+            // In a real application, you would load the classify data from the server
+            openModal('classifyModal');
+        }
+
+        function deleteClassify(classifyId) {
+            if (confirm('确定要删除这个分类吗？')) {
+                // In a real application, you would send a DELETE request to your API
+                alert(`删除分类 ID: ${classifyId}`);
+            }
+        }
+
+        // Dealer functions
+        function openAddDealerModal() {
+            document.getElementById('dealerModalTitle').textContent = '添加经销商';
+            document.getElementById('dealerForm').reset();
+            document.getElementById('dealerId').value = '';
+            openModal('dealerModal');
+        }
+
+        function editDealer(dealerId) {
+            document.getElementById('dealerModalTitle').textContent = '编辑经销商';
+            // In a real application, you would load the dealer data from the server
+            openModal('dealerModal');
+        }
+
+        function deleteDealer(dealerId) {
+            if (confirm('确定要删除这个经销商吗？')) {
+                // In a real application, you would send a DELETE request to your API
+                alert(`删除经销商 ID: ${dealerId}`);
+            }
+        }
+
+        // Stock in functions
+        function openAddStockInModal() {
+            document.getElementById('stockInForm').reset();
+            openModal('stockInModal');
+        }
+
+        // Add stock in item
+        function addStockInItem() {
+            const itemsContainer = document.getElementById('stockInItems');
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'form-row';
+            itemDiv.innerHTML = `
+                <div class="form-group">
+                    <label>规格</label>
+                    <select required>
+                        <option value="">请选择规格</option>
+                        <option value="1">皇家小型犬成犬粮 3kg</option>
+                        <option value="2">皇家小型犬成犬粮 10kg</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>数量</label>
+                    <input type="number" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>单价</label>
+                    <input type="number" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>生产日期</label>
+                    <input type="date" required>
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn btn-danger" onclick="removeStockInItem(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            itemsContainer.insertBefore(itemDiv, document.getElementById('addStockInItemBtn'));
+        }
+
+        function removeStockInItem(button) {
+            const itemDiv = button.closest('.form-row');
+            itemDiv.remove();
+        }
+
+        // Save functions (in a real app, these would send data to your API)
+        function saveProduct() {
+            alert('产品信息已保存');
+            closeModal('productModal');
+        }
+
+        function saveSpec() {
+            alert('规格信息已保存');
+            closeModal('specModal');
+        }
+
+        function saveBrand() {
+            alert('品牌信息已保存');
+            closeModal('brandModal');
+        }
+
+        function saveClassify() {
+            alert('分类信息已保存');
+            closeModal('classifyModal');
+        }
+
+        function saveDealer() {
+            alert('经销商信息已保存');
+            closeModal('dealerModal');
+        }
+
+        function saveStockIn() {
+            alert('入库信息已保存');
+            closeModal('stockInModal');
+        }
+
+        // Event listeners for buttons
+        document.getElementById('addProductBtn').addEventListener('click', openAddProductModal);
+        document.getElementById('addSpecBtn').addEventListener('click', openAddSpecModal);
+        document.getElementById('addBrandBtn').addEventListener('click', openAddBrandModal);
+        document.getElementById('addClassifyBtn').addEventListener('click', openAddClassifyModal);
+        document.getElementById('addDealerBtn').addEventListener('click', openAddDealerModal);
+        document.getElementById('addStockInBtn').addEventListener('click', openAddStockInModal);
+        
+        document.getElementById('saveProductBtn').addEventListener('click', saveProduct);
+        document.getElementById('saveSpecBtn').addEventListener('click', saveSpec);
+        document.getElementById('saveBrandBtn').addEventListener('click', saveBrand);
+        document.getElementById('saveClassifyBtn').addEventListener('click', saveClassify);
+        document.getElementById('saveDealerBtn').addEventListener('click', saveDealer);
+        document.getElementById('saveStockInBtn').addEventListener('click', saveStockIn);
+        
+        document.getElementById('cancelProductBtn').addEventListener('click', () => closeModal('productModal'));
+        document.getElementById('cancelSpecBtn').addEventListener('click', () => closeModal('specModal'));
+        document.getElementById('cancelBrandBtn').addEventListener('click', () => closeModal('brandModal'));
+        document.getElementById('cancelClassifyBtn').addEventListener('click', () => closeModal('classifyModal'));
+        document.getElementById('cancelDealerBtn').addEventListener('click', () => closeModal('dealerModal'));
+        document.getElementById('cancelStockInBtn').addEventListener('click', () => closeModal('stockInModal'));
+        
+        document.getElementById('addStockInItemBtn').addEventListener('click', addStockInItem);
+
+        // Simple sidebar menu interaction
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.menu-item').forEach(i => {
+                    i.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,3468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宠物管理系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --success: #06d6a0;
+            --info: #4895ef;
+            --warning: #ffd166;
+            --danger: #ef476f;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --sidebar-width: 260px;
+            --header-height: 70px;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f5f7fb;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary), #3a56d4);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            transition: var(--transition);
+            z-index: 1000;
+            box-shadow: 3px 0 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 25px 20px;
+            display: flex;
+            align-items: center;
+            height: var(--header-height);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h2 {
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin-left: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-header i {
+            font-size: 1.8rem;
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+            flex: 1;
+        }
+
+        .menu-item {
+            padding: 14px 25px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: var(--transition);
+            border-left: 4px solid transparent;
+            margin: 5px 15px;
+            border-radius: var(--border-radius);
+        }
+
+        .menu-item:hover, .menu-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            border-left: 4px solid white;
+        }
+
+        .menu-item i {
+            margin-right: 15px;
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            transition: var(--transition);
+        }
+
+        .header {
+            height: var(--header-height);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+
+        .header-title h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .user-actions {
+            display: flex;
+            align-items: center;
+        }
+
+        .notification {
+            margin-right: 25px;
+            position: relative;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--gray);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            margin-right: 12px;
+        }
+
+        /* Content Area */
+        .content {
+            padding: 30px;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-title h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .btn {
+            padding: 12px 22px;
+            border-radius: var(--border-radius);
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(6, 214, 160, 0.3);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(239, 71, 111, 0.3);
+        }
+
+        .btn-sm {
+            padding: 8px 15px;
+            font-size: 0.85rem;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--light-gray);
+            margin-bottom: 30px;
+            background: white;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+            padding: 0 20px;
+        }
+
+        .tab {
+            padding: 16px 25px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: var(--transition);
+            font-weight: 600;
+            color: var(--gray);
+        }
+
+        .tab.active {
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .search-box {
+            display: flex;
+            margin-bottom: 25px;
+            max-width: 500px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--border-radius) 0 0 var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .search-box button {
+            padding: 12px 25px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .search-box button:hover {
+            background: var(--primary-dark);
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 30px;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        th {
+            font-weight: 700;
+            color: var(--gray);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            font-size: 0.95rem;
+        }
+
+        tbody tr:hover {
+            background-color: rgba(67, 97, 238, 0.03);
+        }
+
+        .action-buttons .btn {
+            margin-right: 5px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-right: 20px;
+        }
+
+        .stat-icon.primary {
+            background: rgba(67, 97, 238, 0.15);
+            color: var(--primary);
+        }
+
+        .stat-icon.success {
+            background: rgba(6, 214, 160, 0.15);
+            color: var(--success);
+        }
+
+        .stat-icon.warning {
+            background: rgba(255, 209, 102, 0.15);
+            color: #e9b300;
+        }
+
+        .stat-icon.danger {
+            background: rgba(239, 71, 111, 0.15);
+            color: var(--danger);
+        }
+
+        .stat-info h4 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-info p {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .close {
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: var(--gray);
+            background: none;
+            border: none;
+        }
+
+        .close:hover {
+            color: var(--dark);
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .modal-footer {
+            padding: 20px 25px;
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: var(--border-radius);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 3000;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification-toast.show {
+            transform: translateX(0);
+        }
+
+        .notification-toast.success {
+            background: var(--success);
+        }
+
+        .notification-toast.error {
+            background: var(--danger);
+        }
+
+        @media (max-width: 992px) {
+            .stats-container {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            
+            .sidebar .menu-item span {
+                display: none;
+            }
+            
+            .sidebar .menu-item i {
+                margin-right: 0;
+                font-size: 1.3rem;
+            }
+            
+            .sidebar-header h2, .sidebar-footer {
+                display: none;
+            }
+            
+            .sidebar-header {
+                justify-content: center;
+                padding: 25px 0;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+            }
+            
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .header {
+                padding: 0 15px;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            th, td {
+                padding: 10px 8px;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-paw"></i>
+                <h2>宠物管理系统</h2>
+            </div>
+            <div class="sidebar-menu">
+                <div class="menu-item active" data-tab="dashboard">
+                    <i class="fas fa-home"></i>
+                    <span>仪表板</span>
+                </div>
+                <div class="menu-item" data-tab="customer-pets">
+                    <i class="fas fa-users"></i>
+                    <span>客户与宠物</span>
+                </div>
+                <div class="menu-item" data-tab="appointments">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>预约管理</span>
+                </div>
+                <div class="menu-item" data-tab="inventory">
+                    <i class="fas fa-warehouse"></i>
+                    <span>库存管理</span>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <p>© 2025 宠物管理系统</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <div class="header-title">
+                    <h1 id="current-page-title">仪表板</h1>
+                </div>
+                <div class="user-actions">
+                    <div class="notification">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </div>
+                    <div class="user-profile">
+                        <div class="user-avatar">A</div>
+                        <span>管理员</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content">
+                <!-- Dashboard Tab -->
+                <div id="dashboard-tab" class="tab-content active">
+                    <div class="dashboard-header">
+                        <div class="page-title">
+                            <h2>仪表板</h2>
+                        </div>
+                    </div>
+
+                    <div class="stats-container">
+                        <div class="stat-card" onclick="switchTab('customer-pets')">
+                            <div class="stat-icon primary">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4 id="customer-count">0</h4>
+                                <p>客户总数</p>
+                            </div>
+                        </div>
+                        <div class="stat-card" onclick="switchTab('customer-pets')">
+                            <div class="stat-icon success">
+                                <i class="fas fa-dog"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4 id="pet-count">0</h4>
+                                <p>宠物总数</p>
+                            </div>
+                        </div>
+                        <div class="stat-card" onclick="switchTab('appointments')">
+                            <div class="stat-icon warning">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4 id="appointment-count">0</h4>
+                                <p>预约数量</p>
+                            </div>
+                        </div>
+                        <div class="stat-card" onclick="switchTab('inventory')">
+                            <div class="stat-icon danger">
+                                <i class="fas fa-boxes"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4 id="product-count">0</h4>
+                                <p>商品种类</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>最近预约</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>客户</th>
+                                            <th>宠物</th>
+                                            <th>服务</th>
+                                            <th>日期</th>
+                                            <th>时间</th>
+                                            <th>状态</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recent-appointments">
+                                        <tr>
+                                            <td colspan="6" class="text-center">加载中...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customer & Pets Tab -->
+                <div id="customer-pets-tab" class="tab-content">
+                    <div class="tabs">
+                        <div class="tab active" data-cp-tab="customers">客户管理</div>
+                        <div class="tab" data-cp-tab="pets">宠物管理</div>
+                    </div>
+
+                    <!-- Customers Management -->
+                    <div id="customers-cp-tab" class="tab-content active">
+                        <div class="dashboard-header">
+                            <div class="page-title">
+                                <h2>客户管理</h2>
+                            </div>
+                            <button class="btn btn-primary" id="add-customer-btn">
+                                <i class="fas fa-plus"></i> 添加客户
+                            </button>
+                        </div>
+
+                        <div class="search-box">
+                            <input type="text" id="customer-search" placeholder="搜索客户...">
+                            <button type="button"><i class="fas fa-search"></i> 搜索</button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>客户列表</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>姓名</th>
+                                                <th>性别</th>
+                                                <th>地址</th>
+                                                <th>电话</th>
+                                                <th>会员等级</th>
+                                                <th>注册时间</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="customers-table-body">
+                                            <tr>
+                                                <td colspan="8" class="text-center">加载中...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pets Management -->
+                    <div id="pets-cp-tab" class="tab-content">
+                        <div class="dashboard-header">
+                            <div class="page-title">
+                                <h2>宠物管理</h2>
+                            </div>
+                            <button class="btn btn-primary" id="add-pet-btn">
+                                <i class="fas fa-plus"></i> 添加宠物
+                            </button>
+                        </div>
+
+                        <div class="search-box">
+                            <input type="text" id="pet-search" placeholder="搜索宠物...">
+                            <button type="button"><i class="fas fa-search"></i> 搜索</button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>宠物列表</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>宠物名</th>
+                                                <th>主人</th>
+                                                <th>种类</th>
+                                                <th>品种</th>
+                                                <th>性别</th>
+                                                <th>年龄</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pets-table-body">
+                                            <tr>
+                                                <td colspan="8" class="text-center">加载中...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appointments Tab -->
+                <div id="appointments-tab" class="tab-content">
+                    <div class="dashboard-header">
+                        <div class="page-title">
+                            <h2>预约管理</h2>
+                        </div>
+                        <button class="btn btn-primary" id="add-appointment-btn">
+                            <i class="fas fa-plus"></i> 添加预约
+                        </button>
+                    </div>
+
+                    <div class="search-box">
+                        <input type="text" id="appointment-search" placeholder="搜索预约...">
+                        <button type="button"><i class="fas fa-search"></i> 搜索</button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>预约列表</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>客户</th>
+                                            <th>宠物</th>
+                                            <th>服务</th>
+                                            <th>日期</th>
+                                            <th>时间</th>
+                                            <th>状态</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="appointments-table-body">
+                                        <tr>
+                                            <td colspan="8" class="text-center">加载中...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory Tab -->
+                <div id="inventory-tab" class="tab-content">
+                    <div class="tabs">
+                        <div class="tab active" data-inventory-tab="classify">分类管理</div>
+                        <div class="tab" data-inventory-tab="brands">品牌管理</div>
+                        <div class="tab" data-inventory-tab="products">商品管理</div>
+                        <div class="tab" data-inventory-tab="specs">规格管理</div>
+                        <div class="tab" data-inventory-tab="dealers">经销商管理</div>
+                        <div class="tab" data-inventory-tab="stock_in">入库管理</div>
+                    </div>
+
+                    <!-- Classify Management -->
+                    <div id="classify-inventory-tab" class="tab-content active">
+                        <div class="dashboard-header">
+                            <div class="page-title">
+                                <h2>分类管理</h2>
+                            </div>
+                            <button class="btn btn-primary" id="add-classify-btn">
+                                <i class="fas fa-plus"></i> 添加分类
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>分类列表</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>分类名称</th>
+                                                <th>父级分类</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="classify-table-body">
+                                            <tr>
+                                                <td colspan="4" class="text-center">加载中...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Brands Management -->
+                    <div id="brands-inventory-tab" class="tab-content">
+                        <div class="dashboard-header">
+                            <div class="page-title">
+                                <h2>品牌管理</h2>
+                            </div>
+                            <button class="btn btn-primary" id="add-brand-btn">
+                                <i class="fas fa-plus"></i> 添加品牌
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>品牌列表</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>品牌名称</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="brands-table-body">
+                                            <tr>
+                                                <td colspan="3" class="text-center">加载中...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Products Management -->
+                    <div id="products-inventory-tab" class="tab-content">
+                        <div class="dashboard-header">
+                            <div class="page-title">
+                                <h2>商品管理</h2>
+                            </div>
+                            <button class="btn btn-primary" id="add-product-btn">
+                                <i class="fas fa-plus"></i> 添加商品
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>商品列表</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>商品名称</th>
+                                                <th>分类</th>
+                                                <th>品牌</th>
+                                                <th>保质期</th>
+                                                <th>产地</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="products-table-body">
+                                            <tr>
+                                                <td colspan="7" class="text-center">加载中...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Specs Management -->
+                    <div id="specs-inventory-tab" class="tab-content">
+                        <div class="dashboard-header">
+                            <div class="page-title">
+                                <h2>规格管理</h2>
+                            </div>
+                            <button class="btn btn-primary" id="add-spec-btn">
+                                <i class="fas fa-plus"></i> 添加规格
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>规格列表</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>商品名称</th>
+                                                <th>规格名称</th>
+                                                <th>规格值</th>
+                                                <th>条码</th>
+                                                <th>库存</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="specs-table-body">
+                                            <tr>
+                                                <td colspan="7" class="text-center">加载中...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dealers Management -->
+                    <div id="dealers-inventory-tab" class="tab-content">
+                        <div class="dashboard-header">
+                            <div class="page-title">
+                                <h2>经销商管理</h2>
+                            </div>
+                            <button class="btn btn-primary" id="add-dealer-btn">
+                                <i class="fas fa-plus"></i> 添加经销商
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>经销商列表</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>经销商名称</th>
+                                                <th>电话</th>
+                                                <th>地址</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="dealers-table-body">
+                                            <tr>
+                                                <td colspan="5" class="text-center">加载中...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stock In Management -->
+                    <div id="stock_in-inventory-tab" class="tab-content">
+                        <div class="dashboard-header">
+                            <div class="page-title">
+                                <h2>入库管理</h2>
+                            </div>
+                            <button class="btn btn-primary" id="add-stock-in-btn">
+                                <i class="fas fa-plus"></i> 新增入库
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>入库记录</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>经销商</th>
+                                                <th>入库日期</th>
+                                                <th>总金额</th>
+                                                <th>商品</th>
+                                                <th>规格</th>
+                                                <th>数量</th>
+                                                <th>进价</th>
+                                                <th>生产日期</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="stock-in-table-body">
+                                            <tr>
+                                                <td colspan="9" class="text-center">加载中...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Customer Modal -->
+    <div id="customer-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="customer-modal-title">添加/编辑客户</h2>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="customer-form">
+                    <input type="hidden" id="customer-id">
+                    <div class="form-group">
+                        <label for="customer-name">客户姓名：</label>
+                        <input type="text" id="customer-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-gender">性别：</label>
+                        <select id="customer-gender" class="form-control" required>
+                            <option value="">请选择</option>
+                            <option value="男">男</option>
+                            <option value="女">女</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-address">地址：</label>
+                        <input type="text" id="customer-address" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-tel">电话：</label>
+                        <input type="text" id="customer-tel" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-level">会员等级：</label>
+                        <select id="customer-level" class="form-control" required>
+                            <option value="">请选择</option>
+                            <option value="1">普通会员</option>
+                            <option value="2">银卡会员</option>
+                            <option value="3">金卡会员</option>
+                            <option value="4">钻石会员</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-customer-btn">取消</button>
+                        <button type="submit" class="btn btn-success">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pet Modal -->
+    <div id="pet-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="pet-modal-title">添加/编辑宠物</h2>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="pet-form">
+                    <input type="hidden" id="pet-id">
+                    <div class="form-group">
+                        <label for="pet-name">宠物名：</label>
+                        <input type="text" id="pet-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="pet-owner">主人：</label>
+                        <select id="pet-owner" class="form-control" required>
+                            <option value="">请选择主人</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pet-species">种类：</label>
+                        <input type="text" id="pet-species" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="pet-breeds">品种：</label>
+                        <input type="text" id="pet-breeds" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="pet-gender">性别：</label>
+                        <select id="pet-gender" class="form-control" required>
+                            <option value="">请选择</option>
+                            <option value="公">公</option>
+                            <option value="母">母</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pet-age">年龄：</label>
+                        <input type="number" id="pet-age" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="pet-neuter">是否绝育：</label>
+                        <select id="pet-neuter" class="form-control">
+                            <option value="">请选择</option>
+                            <option value="是">是</option>
+                            <option value="否">否</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pet-character">性格：</label>
+                        <input type="text" id="pet-character" class="form-control">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-pet-btn">取消</button>
+                        <button type="submit" class="btn btn-success">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointment Modal -->
+    <div id="appointment-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="appointment-modal-title">添加/编辑预约</h2>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="appointment-form">
+                    <input type="hidden" id="appointment-id">
+                    <div class="form-group">
+                        <label for="appointment-customer">客户：</label>
+                        <select id="appointment-customer" class="form-control" required>
+                            <option value="">请选择客户</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-pet">宠物：</label>
+                        <select id="appointment-pet" class="form-control" required>
+                            <option value="">请选择宠物</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-service">服务项目：</label>
+                        <select id="appointment-service" class="form-control" required>
+                            <option value="">请选择服务</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-date">预约日期：</label>
+                        <input type="date" id="appointment-date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-time">预约时间：</label>
+                        <input type="time" id="appointment-time" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-status">状态：</label>
+                        <select id="appointment-status" class="form-control">
+                            <option value="待确认">待确认</option>
+                            <option value="已确认">已确认</option>
+                            <option value="已完成">已完成</option>
+                            <option value="已取消">已取消</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-notes">备注：</label>
+                        <textarea id="appointment-notes" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-appointment-btn">取消</button>
+                        <button type="submit" class="btn btn-success">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Classify Modal -->
+    <div id="classify-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="classify-modal-title">添加/编辑分类</h2>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="classify-form">
+                    <input type="hidden" id="classify-id">
+                    <div class="form-group">
+                        <label for="classify-name">分类名称：</label>
+                        <input type="text" id="classify-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="classify-parent">父级分类：</label>
+                        <select id="classify-parent" class="form-control">
+                            <option value="">无</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-classify-btn">取消</button>
+                        <button type="submit" class="btn btn-success">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Brand Modal -->
+    <div id="brand-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="brand-modal-title">添加/编辑品牌</h2>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="brand-form">
+                    <input type="hidden" id="brand-id">
+                    <div class="form-group">
+                        <label for="brand-name">品牌名称：</label>
+                        <input type="text" id="brand-name" class="form-control" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-brand-btn">取消</button>
+                        <button type="submit" class="btn btn-success">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="product-modal-title">添加/编辑商品</h2>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="product-form">
+                    <input type="hidden" id="product-id">
+                    <div class="form-group">
+                        <label for="product-name">商品名称：</label>
+                        <input type="text" id="product-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-classify">分类：</label>
+                        <select id="product-classify" class="form-control" required>
+                            <option value="">请选择分类</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-brand">品牌：</label>
+                        <select id="product-brand" class="form-control" required>
+                            <option value="">请选择品牌</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-baozhiqi">保质期(月)：</label>
+                        <input type="number" id="product-baozhiqi" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-local">产地：</label>
+                        <input type="text" id="product-local" class="form-control" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-product-btn">取消</button>
+                        <button type="submit" class="btn btn-success">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spec Modal -->
+    <div id="spec-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="spec-modal-title">添加/编辑规格</h2>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>为商品 <strong id="spec-product-name">-</strong> 添加规格</p>
+                <form id="spec-form">
+                    <input type="hidden" id="spec-id">
+                    <input type="hidden" id="spec-product-id">
+                    <div class="form-group">
+                        <label for="spec-name">规格名称：</label>
+                        <input type="text" id="spec-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="spec-value">规格值：</label>
+                        <input type="text" id="spec-value" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="spec-barcode">条码：</label>
+                        <input type="text" id="spec-barcode" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="spec-stock">库存：</label>
+                        <input type="number" id="spec-stock" class="form-control" required value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="spec-picture">图片：</label>
+                        <input type="text" id="spec-picture" class="form-control">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-spec-btn">取消</button>
+                        <button type="submit" class="btn btn-success">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dealer Modal -->
+    <div id="dealer-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="dealer-modal-title">添加/编辑经销商</h2>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="dealer-form">
+                    <input type="hidden" id="dealer-id">
+                    <div class="form-group">
+                        <label for="dealer-name">经销商名称：</label>
+                        <input type="text" id="dealer-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dealer-tel">电话：</label>
+                        <input type="text" id="dealer-tel" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dealer-address">地址：</label>
+                        <input type="text" id="dealer-address" class="form-control" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-dealer-btn">取消</button>
+                        <button type="submit" class="btn btn-success">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock In Modal -->
+    <div id="stock-in-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="stock-in-modal-title">新增入库</h2>
+                <button class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="stock-in-form">
+                    <div class="form-group">
+                        <label for="stock-in-dealer">经销商：</label>
+                        <select id="stock-in-dealer" class="form-control" required>
+                            <option value="">请选择经销商</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>入库明细：</label>
+                        <table id="stock-in-detail-table">
+                            <thead>
+                                <tr>
+                                    <th>商品名称</th>
+                                    <th>规格</th>
+                                    <th>数量</th>
+                                    <th>进价</th>
+                                    <th>生产日期</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="product-name">-</td>
+                                    <td>
+                                        <select name="spec_id" class="form-control spec-select"></select>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="quantity" class="form-control" min="1" value="1" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="price_in" class="form-control" step="0.01" value="0.00" required>
+                                    </td>
+                                    <td>
+                                        <input type="date" name="product_date" class="form-control" required>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm remove-detail-row">删除</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-secondary" id="add-detail-row">+ 添加明细</button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-stock-in-btn">取消</button>
+                        <button type="submit" class="btn btn-success">提交入库</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification-toast" class="notification-toast"></div>
+
+    <script>
+        // 全局变量
+        let currentTab = 'dashboard';
+        let currentInventoryTab = 'classify';
+
+        // DOM加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化事件监听器
+            initEventListeners();
+            
+            // 加载初始数据
+            loadDashboardData();
+            
+            // 加载客户数据
+            loadCustomers();
+            
+            // 加载宠物数据
+            loadPets();
+            
+            // 加载预约数据
+            loadAppointments();
+            
+            // 加载库存数据
+            loadInventoryData();
+        });
+
+        // 初始化事件监听器
+        function initEventListeners() {
+            // 侧边栏菜单点击事件
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const tab = this.getAttribute('data-tab');
+                    switchTab(tab);
+                });
+            });
+
+            // 库存管理标签页切换
+            document.querySelectorAll('[data-inventory-tab]').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const inventoryTab = this.getAttribute('data-inventory-tab');
+                    switchInventoryTab(inventoryTab);
+                });
+            });
+
+            // 客户与宠物管理标签页切换
+            document.querySelectorAll('[data-cp-tab]').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const cpTab = this.getAttribute('data-cp-tab');
+                    switchCPTab(cpTab);
+                });
+            });
+
+            // 模态框关闭按钮
+            document.querySelectorAll('.close').forEach(button => {
+                button.addEventListener('click', function() {
+                    const modal = this.closest('.modal');
+                    closeModal(modal);
+                });
+            });
+
+            // 点击模态框外部关闭
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeModal(this);
+                    }
+                });
+            });
+
+            // 添加按钮事件
+            document.getElementById('add-customer-btn').addEventListener('click', () => openCustomerModal());
+            document.getElementById('add-pet-btn').addEventListener('click', () => openPetModal());
+            document.getElementById('add-appointment-btn').addEventListener('click', () => openAppointmentModal());
+            document.getElementById('add-classify-btn').addEventListener('click', () => openClassifyModal());
+            document.getElementById('add-brand-btn').addEventListener('click', () => openBrandModal());
+            document.getElementById('add-product-btn').addEventListener('click', () => openProductModal());
+            document.getElementById('add-spec-btn').addEventListener('click', () => openSpecModal());
+            document.getElementById('add-dealer-btn').addEventListener('click', () => openDealerModal());
+            document.getElementById('add-stock-in-btn').addEventListener('click', () => openStockInModal());
+
+            // 取消按钮事件
+            document.getElementById('cancel-customer-btn').addEventListener('click', () => closeModal(document.getElementById('customer-modal')));
+            document.getElementById('cancel-pet-btn').addEventListener('click', () => closeModal(document.getElementById('pet-modal')));
+            document.getElementById('cancel-appointment-btn').addEventListener('click', () => closeModal(document.getElementById('appointment-modal')));
+            document.getElementById('cancel-classify-btn').addEventListener('click', () => closeModal(document.getElementById('classify-modal')));
+            document.getElementById('cancel-brand-btn').addEventListener('click', () => closeModal(document.getElementById('brand-modal')));
+            document.getElementById('cancel-product-btn').addEventListener('click', () => closeModal(document.getElementById('product-modal')));
+            document.getElementById('cancel-spec-btn').addEventListener('click', () => closeModal(document.getElementById('spec-modal')));
+            document.getElementById('cancel-dealer-btn').addEventListener('click', () => closeModal(document.getElementById('dealer-modal')));
+            document.getElementById('cancel-stock-in-btn').addEventListener('click', () => closeModal(document.getElementById('stock-in-modal')));
+
+            // 表单提交事件
+            document.getElementById('customer-form').addEventListener('submit', handleCustomerSubmit);
+            document.getElementById('pet-form').addEventListener('submit', handlePetSubmit);
+            document.getElementById('appointment-form').addEventListener('submit', handleAppointmentSubmit);
+            document.getElementById('classify-form').addEventListener('submit', handleClassifySubmit);
+            document.getElementById('brand-form').addEventListener('submit', handleBrandSubmit);
+            document.getElementById('product-form').addEventListener('submit', handleProductSubmit);
+            document.getElementById('spec-form').addEventListener('submit', handleSpecSubmit);
+            document.getElementById('dealer-form').addEventListener('submit', handleDealerSubmit);
+            document.getElementById('stock-in-form').addEventListener('submit', handleStockInSubmit);
+
+            // 动态添加入库明细行
+            document.getElementById('add-detail-row').addEventListener('click', addDetailRow);
+            
+            // 动态删除入库明细行
+            document.querySelector('#stock-in-detail-table tbody').addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-detail-row')) {
+                    removeDetailRow(e.target);
+                }
+            });
+        }
+
+        // 切换主标签页
+        function switchTab(tab) {
+            // 更新当前标签页
+            currentTab = tab;
+            
+            // 更新侧边栏活动状态
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-tab') === tab) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // 显示对应的标签页内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            document.getElementById(`${tab}-tab`).classList.add('active');
+            
+            // 更新页面标题
+            const titles = {
+                'dashboard': '仪表板',
+                'customer-pets': '客户与宠物',
+                'appointments': '预约管理',
+                'inventory': '库存管理'
+            };
+            
+            document.getElementById('current-page-title').textContent = titles[tab];
+            
+            // 根据标签页加载数据
+            switch(tab) {
+                case 'dashboard':
+                    loadDashboardData();
+                    break;
+                case 'customer-pets':
+                    loadCustomers();
+                    loadPets();
+                    // 确保默认的客户管理子标签页被激活显示
+                    switchCPTab('customers');
+                    break;
+                case 'appointments':
+                    loadAppointments();
+                    break;
+                case 'inventory':
+                    loadInventoryData();
+                    // 确保默认的分类管理子标签页被激活显示
+                    switchInventoryTab('classify');
+                    break;
+            }
+        }
+
+        // 切换客户与宠物管理子标签页
+        function switchCPTab(tab) {
+            // 更新标签页活动状态
+            document.querySelectorAll('[data-cp-tab]').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-cp-tab') === tab) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // 显示对应的标签页内容
+            document.querySelectorAll('#customer-pets-tab .tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            document.getElementById(`${tab}-cp-tab`).classList.add('active');
+            
+            // 根据标签页加载数据
+            switch(tab) {
+                case 'customers':
+                    loadCustomers();
+                    break;
+                case 'pets':
+                    loadPets();
+                    break;
+            }
+        }
+
+        // 切换库存管理子标签页
+        function switchInventoryTab(tab) {
+            // 更新当前库存标签页
+            currentInventoryTab = tab;
+            
+            // 更新标签页活动状态
+            document.querySelectorAll('[data-inventory-tab]').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-inventory-tab') === tab) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // 显示对应的标签页内容
+            document.querySelectorAll('#inventory-tab .tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            document.getElementById(`${tab}-inventory-tab`).classList.add('active');
+            
+            // 根据标签页加载数据
+            switch(tab) {
+                case 'classify':
+                    loadClassifyData();
+                    break;
+                case 'brands':
+                    loadBrandsData();
+                    break;
+                case 'products':
+                    loadProductsData();
+                    break;
+                case 'specs':
+                    loadSpecsData();
+                    break;
+                case 'dealers':
+                    loadDealersData();
+                    break;
+                case 'stock_in':
+                    loadStockInData();
+                    break;
+            }
+        }
+
+        // 打开模态框
+        function openModal(modal) {
+            modal.style.display = 'flex';
+        }
+
+        // 关闭模态框
+        function closeModal(modal) {
+            modal.style.display = 'none';
+            
+            // 清空表单
+            const form = modal.querySelector('form');
+            if (form) {
+                form.reset();
+                const hiddenInputs = form.querySelectorAll('input[type="hidden"]');
+                hiddenInputs.forEach(input => {
+                    if (input.id !== 'spec-product-id' && input.id !== 'spec-product-name') {
+                        input.value = '';
+                    }
+                });
+            }
+        }
+
+        // 显示通知
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('notification-toast');
+            toast.textContent = message;
+            toast.className = `notification-toast ${type}`;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // 加载仪表板数据
+        function loadDashboardData() {
+            // 加载统计数据
+            loadStatsData();
+            
+            // 加载最近预约
+            loadRecentAppointments();
+        }
+
+        // 加载统计数据
+        function loadStatsData() {
+            // 模拟加载客户数量
+            fetch('/api/customers/get')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('customer-count').textContent = data.data.length;
+                    }
+                })
+                .catch(error => console.error('加载客户数据出错:', error));
+            
+            // 模拟加载宠物数量
+            fetch('/api/pets/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('pet-count').textContent = data.count;
+                    }
+                })
+                .catch(error => console.error('加载宠物数据出错:', error));
+            
+            // 模拟加载预约数量
+            fetch('/api/appointments/get')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('appointment-count').textContent = data.data.length;
+                    }
+                })
+                .catch(error => console.error('加载预约数据出错:', error));
+            
+            // 模拟加载商品数量
+            fetch('/api/inventory/products')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('product-count').textContent = data.data.length;
+                    }
+                })
+                .catch(error => console.error('加载商品数据出错:', error));
+        }
+
+        // 加载最近预约
+        function loadRecentAppointments() {
+            fetch('/api/appointments/get')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const tbody = document.getElementById('recent-appointments');
+                        tbody.innerHTML = '';
+                        
+                        // 只显示最近5条记录
+                        const recent = data.data.slice(0, 5);
+                        
+                        if (recent.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="6" class="text-center">暂无预约记录</td></tr>';
+                            return;
+                        }
+                        
+                        recent.forEach(appointment => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${appointment.customername || '-'}</td>
+                                <td>${appointment.petname || '-'}</td>
+                                <td>${appointment.service_name || '-'}</td>
+                                <td>${appointment.appointment_date || '-'}</td>
+                                <td>${appointment.appointment_time || '-'}</td>
+                                <td>${getStatusBadge(appointment.status)}</td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('加载预约数据出错:', error);
+                    document.getElementById('recent-appointments').innerHTML = '<tr><td colspan="6" class="text-center">加载失败</td></tr>';
+                });
+        }
+
+        // 获取状态徽章
+        function getStatusBadge(status) {
+            const statusMap = {
+                '待确认': '<span class="badge" style="background-color: #ffc107; color: #000;">待确认</span>',
+                '已确认': '<span class="badge" style="background-color: #17a2b8; color: #fff;">已确认</span>',
+                '已完成': '<span class="badge" style="background-color: #28a745; color: #fff;">已完成</span>',
+                '已取消': '<span class="badge" style="background-color: #dc3545; color: #fff;">已取消</span>'
+            };
+            
+            return statusMap[status] || status;
+        }
+
+        // 加载客户数据
+        function loadCustomers() {
+            fetch('/api/customers/get')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const tbody = document.getElementById('customers-table-body');
+                        tbody.innerHTML = '';
+                        
+                        if (data.data.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="8" class="text-center">暂无客户数据</td></tr>';
+                            return;
+                        }
+                        
+                        data.data.forEach(customer => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${customer.customerID}</td>
+                                <td>${customer.customername}</td>
+                                <td>${customer.gender}</td>
+                                <td>${customer.address}</td>
+                                <td>${customer.telphone}</td>
+                                <td>${getMembershipLevel(customer.Membershiplevel)}</td>
+                                <td>${customer.create_time ? new Date(customer.create_time).toLocaleDateString() : '-'}</td>
+                                <td class="action-buttons">
+                                    <button class="btn btn-primary btn-sm" onclick="editCustomer(${customer.customerID})">编辑</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteCustomer(${customer.customerID})">删除</button>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('加载客户数据出错:', error);
+                    document.getElementById('customers-table-body').innerHTML = '<tr><td colspan="8" class="text-center">加载失败</td></tr>';
+                });
+        }
+
+        // 获取会员等级名称
+        function getMembershipLevel(level) {
+            const levelMap = {
+                '1': '普通会员',
+                '2': '银卡会员',
+                '3': '金卡会员',
+                '4': '钻石会员'
+            };
+            
+            return levelMap[level] || level;
+        }
+
+        // 打开客户模态框
+        function openCustomerModal(customer = null) {
+            const modal = document.getElementById('customer-modal');
+            const title = document.getElementById('customer-modal-title');
+            
+            if (customer) {
+                // 编辑模式
+                title.textContent = '编辑客户';
+                document.getElementById('customer-id').value = customer.customerID;
+                document.getElementById('customer-name').value = customer.customername;
+                document.getElementById('customer-gender').value = customer.gender;
+                document.getElementById('customer-address').value = customer.address;
+                document.getElementById('customer-tel').value = customer.telphone;
+                document.getElementById('customer-level').value = customer.Membershiplevel;
+            } else {
+                // 添加模式
+                title.textContent = '添加客户';
+                document.getElementById('customer-id').value = '';
+            }
+            
+            openModal(modal);
+        }
+
+        // 编辑客户
+        function editCustomer(customerId) {
+            fetch(`/api/customers/get`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const customer = data.data.find(c => c.customerID == customerId);
+                        if (customer) {
+                            openCustomerModal(customer);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('获取客户数据出错:', error);
+                    showToast('获取客户数据失败', 'error');
+                });
+        }
+
+        // 删除客户
+        function deleteCustomer(customerId) {
+            if (confirm('确定要删除这个客户吗？')) {
+                fetch(`/api/customers/delete/${customerId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast('客户删除成功');
+                        loadCustomers();
+                    } else {
+                        showToast('客户删除失败: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除客户出错:', error);
+                    showToast('删除客户失败', 'error');
+                });
+            }
+        }
+
+        // 处理客户表单提交
+        function handleCustomerSubmit(e) {
+            e.preventDefault();
+            
+            const customerId = document.getElementById('customer-id').value;
+            const customerData = {
+                customername: document.getElementById('customer-name').value,
+                gender: document.getElementById('customer-gender').value,
+                address: document.getElementById('customer-address').value,
+                telphone: document.getElementById('customer-tel').value,
+                Membershiplevel: document.getElementById('customer-level').value
+            };
+            
+            const method = customerId ? 'PUT' : 'POST';
+            const url = customerId ? `/api/customers/put/${customerId}` : '/api/customers/post';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(customerData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast(customerId ? '客户更新成功' : '客户添加成功');
+                    closeModal(document.getElementById('customer-modal'));
+                    loadCustomers();
+                    loadStatsData(); // 更新统计数据
+                } else {
+                    showToast('操作失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('保存客户出错:', error);
+                showToast('保存客户失败', 'error');
+            });
+        }
+
+        // 加载宠物数据
+        function loadPets() {
+            Promise.all([
+                fetch('/api/pets/').then(response => response.json()),
+                fetch('/api/customers/get').then(response => response.json())
+            ])
+            .then(([petsData, customersData]) => {
+                if (petsData.status === 'success' && customersData.status === 'success') {
+                    const tbody = document.getElementById('pets-table-body');
+                    tbody.innerHTML = '';
+                    
+                    if (petsData.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center">暂无宠物数据</td></tr>';
+                        return;
+                    }
+                    
+                    // 创建客户映射
+                    const customerMap = {};
+                    customersData.data.forEach(customer => {
+                        customerMap[customer.customerID] = customer.customername;
+                    });
+                    
+                    petsData.data.forEach(pet => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${pet.petID}</td>
+                            <td>${pet.petname}</td>
+                            <td>${customerMap[pet.customers_customerID] || '未知'}</td>
+                            <td>${pet.pet_species}</td>
+                            <td>${pet.pet_breeds}</td>
+                            <td>${pet.pet_gender}</td>
+                            <td>${pet.pet_age}</td>
+                            <td class="action-buttons">
+                                <button class="btn btn-primary btn-sm" onclick="editPet(${pet.petID})">编辑</button>
+                                <button class="btn btn-danger btn-sm" onclick="deletePet(${pet.petID})">删除</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('加载宠物数据出错:', error);
+                document.getElementById('pets-table-body').innerHTML = '<tr><td colspan="8" class="text-center">加载失败</td></tr>';
+            });
+        }
+
+        // 打开宠物模态框
+        function openPetModal(pet = null) {
+            const modal = document.getElementById('pet-modal');
+            const title = document.getElementById('pet-modal-title');
+            
+            // 加载客户下拉列表
+            loadCustomerOptions();
+            
+            if (pet) {
+                // 编辑模式
+                title.textContent = '编辑宠物';
+                document.getElementById('pet-id').value = pet.petID;
+                document.getElementById('pet-name').value = pet.petname;
+                document.getElementById('pet-owner').value = pet.customers_customerID;
+                document.getElementById('pet-species').value = pet.pet_species;
+                document.getElementById('pet-breeds').value = pet.pet_breeds;
+                document.getElementById('pet-gender').value = pet.pet_gender;
+                document.getElementById('pet-age').value = pet.pet_age;
+                document.getElementById('pet-neuter').value = pet.neuter || '';
+                document.getElementById('pet-character').value = pet.pet_character || '';
+            } else {
+                // 添加模式
+                title.textContent = '添加宠物';
+                document.getElementById('pet-id').value = '';
+            }
+            
+            openModal(modal);
+        }
+
+        // 加载客户下拉选项
+        function loadCustomerOptions() {
+            fetch('/api/customers/get')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const select = document.getElementById('pet-owner');
+                        const appointmentCustomerSelect = document.getElementById('appointment-customer');
+                        
+                        // 清空现有选项
+                        select.innerHTML = '<option value="">请选择主人</option>';
+                        appointmentCustomerSelect.innerHTML = '<option value="">请选择客户</option>';
+                        
+                        // 添加客户选项
+                        data.data.forEach(customer => {
+                            const option = document.createElement('option');
+                            option.value = customer.customerID;
+                            option.textContent = customer.customername;
+                            select.appendChild(option.cloneNode(true));
+                            appointmentCustomerSelect.appendChild(option.cloneNode(true));
+                        });
+                    }
+                })
+                .catch(error => console.error('加载客户选项出错:', error));
+        }
+
+        // 编辑宠物
+        function editPet(petId) {
+            fetch(`/api/pets/getbyid/${petId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        openPetModal(data.data);
+                    }
+                })
+                .catch(error => {
+                    console.error('获取宠物数据出错:', error);
+                    showToast('获取宠物数据失败', 'error');
+                });
+        }
+
+        // 删除宠物
+        function deletePet(petId) {
+            if (confirm('确定要删除这只宠物吗？')) {
+                fetch(`/api/pets/delete/${petId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast('宠物删除成功');
+                        loadPets();
+                        loadStatsData(); // 更新统计数据
+                    } else {
+                        showToast('宠物删除失败: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除宠物出错:', error);
+                    showToast('删除宠物失败', 'error');
+                });
+            }
+        }
+
+        // 处理宠物表单提交
+        function handlePetSubmit(e) {
+            e.preventDefault();
+            
+            const petId = document.getElementById('pet-id').value;
+            const petData = {
+                petname: document.getElementById('pet-name').value,
+                customers_customerID: document.getElementById('pet-owner').value,
+                pet_species: document.getElementById('pet-species').value,
+                pet_breeds: document.getElementById('pet-breeds').value,
+                pet_gender: document.getElementById('pet-gender').value,
+                pet_age: document.getElementById('pet-age').value,
+                neuter: document.getElementById('pet-neuter').value,
+                pet_character: document.getElementById('pet-character').value
+            };
+            
+            const method = petId ? 'PUT' : 'POST';
+            const url = petId ? `/api/pets/put/${petId}` : '/api/pets/post';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(petData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast(petId ? '宠物更新成功' : '宠物添加成功');
+                    closeModal(document.getElementById('pet-modal'));
+                    loadPets();
+                    loadStatsData(); // 更新统计数据
+                } else {
+                    showToast('操作失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('保存宠物出错:', error);
+                showToast('保存宠物失败', 'error');
+            });
+        }
+
+        // 加载预约数据
+        function loadAppointments() {
+            Promise.all([
+                fetch('/api/appointments/get').then(response => response.json()),
+                fetch('/api/appointments/services/get').then(response => response.json())
+            ])
+            .then(([appointmentsData, servicesData]) => {
+                if (appointmentsData.status === 'success' && servicesData.status === 'success') {
+                    const tbody = document.getElementById('appointments-table-body');
+                    tbody.innerHTML = '';
+                    
+                    if (appointmentsData.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center">暂无预约数据</td></tr>';
+                        return;
+                    }
+                    
+                    // 创建服务映射
+                    const serviceMap = {};
+                    servicesData.data.forEach(service => {
+                        serviceMap[service.service_id] = service.service_name;
+                    });
+                    
+                    appointmentsData.data.forEach(appointment => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${appointment.appointment_id}</td>
+                            <td>${appointment.customername || '未知'}</td>
+                            <td>${appointment.petname || '未知'}</td>
+                            <td>${serviceMap[appointment.service_id] || '未知'}</td>
+                            <td>${appointment.appointment_date}</td>
+                            <td>${appointment.appointment_time}</td>
+                            <td>${getStatusBadge(appointment.status)}</td>
+                            <td class="action-buttons">
+                                <button class="btn btn-primary btn-sm" onclick="editAppointment(${appointment.appointment_id})">编辑</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteAppointment(${appointment.appointment_id})">删除</button>
+                                <button class="btn btn-success btn-sm" onclick="updateAppointmentStatus(${appointment.appointment_id}, '已完成')">完成</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('加载预约数据出错:', error);
+                document.getElementById('appointments-table-body').innerHTML = '<tr><td colspan="8" class="text-center">加载失败</td></tr>';
+            });
+        }
+
+        // 打开预约模态框
+        function openAppointmentModal(appointment = null) {
+            const modal = document.getElementById('appointment-modal');
+            const title = document.getElementById('appointment-modal-title');
+            
+            // 加载客户和宠物下拉列表
+            loadCustomerOptions();
+            loadServiceOptions();
+            
+            if (appointment) {
+                // 编辑模式
+                title.textContent = '编辑预约';
+                document.getElementById('appointment-id').value = appointment.appointment_id;
+                document.getElementById('appointment-customer').value = appointment.customerID;
+                document.getElementById('appointment-pet').value = appointment.petID;
+                document.getElementById('appointment-service').value = appointment.service_id;
+                document.getElementById('appointment-date').value = appointment.appointment_date;
+                document.getElementById('appointment-time').value = appointment.appointment_time;
+                document.getElementById('appointment-status').value = appointment.status;
+                document.getElementById('appointment-notes').value = appointment.notes || '';
+            } else {
+                // 添加模式
+                title.textContent = '添加预约';
+                document.getElementById('appointment-id').value = '';
+                // 设置默认日期为今天
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('appointment-date').value = today;
+            }
+            
+            openModal(modal);
+        }
+
+        // 加载服务选项
+        function loadServiceOptions() {
+            fetch('/api/appointments/services/get')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const select = document.getElementById('appointment-service');
+                        select.innerHTML = '<option value="">请选择服务</option>';
+                        
+                        data.data.forEach(service => {
+                            const option = document.createElement('option');
+                            option.value = service.service_id;
+                            option.textContent = service.service_name;
+                            select.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error('加载服务选项出错:', error));
+        }
+
+        // 编辑预约
+        function editAppointment(appointmentId) {
+            fetch(`/api/appointments/get`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const appointment = data.data.find(a => a.appointment_id == appointmentId);
+                        if (appointment) {
+                            openAppointmentModal(appointment);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('获取预约数据出错:', error);
+                    showToast('获取预约数据失败', 'error');
+                });
+        }
+
+        // 删除预约
+        function deleteAppointment(appointmentId) {
+            if (confirm('确定要删除这个预约吗？')) {
+                fetch(`/api/appointments/delete/${appointmentId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast('预约删除成功');
+                        loadAppointments();
+                    } else {
+                        showToast('预约删除失败: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除预约出错:', error);
+                    showToast('删除预约失败', 'error');
+                });
+            }
+        }
+
+        // 更新预约状态
+        function updateAppointmentStatus(appointmentId, status) {
+            fetch(`/api/appointments/status/${appointmentId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: status })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast('预约状态更新成功');
+                    loadAppointments();
+                } else {
+                    showToast('状态更新失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('更新预约状态出错:', error);
+                showToast('更新预约状态失败', 'error');
+            });
+        }
+
+        // 处理预约表单提交
+        function handleAppointmentSubmit(e) {
+            e.preventDefault();
+            
+            const appointmentId = document.getElementById('appointment-id').value;
+            const appointmentData = {
+                customerID: document.getElementById('appointment-customer').value,
+                petID: document.getElementById('appointment-pet').value,
+                service_id: document.getElementById('appointment-service').value,
+                appointment_date: document.getElementById('appointment-date').value,
+                appointment_time: document.getElementById('appointment-time').value,
+                status: document.getElementById('appointment-status').value,
+                notes: document.getElementById('appointment-notes').value
+            };
+            
+            const method = appointmentId ? 'PUT' : 'POST';
+            const url = appointmentId ? `/api/appointments/put/${appointmentId}` : '/api/appointments/post';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(appointmentData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast(appointmentId ? '预约更新成功' : '预约添加成功');
+                    closeModal(document.getElementById('appointment-modal'));
+                    loadAppointments();
+                    loadStatsData(); // 更新统计数据
+                } else {
+                    showToast('操作失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('保存预约出错:', error);
+                showToast('保存预约失败', 'error');
+            });
+        }
+
+        // 加载库存数据
+        function loadInventoryData() {
+            loadClassifyData();
+            loadBrandsData();
+            loadProductsData();
+            loadSpecsData();
+            loadDealersData();
+            loadStockInData();
+        }
+
+        // 加载分类数据
+        function loadClassifyData() {
+            fetch('/api/inventory/classify')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const tbody = document.getElementById('classify-table-body');
+                        tbody.innerHTML = '';
+                        
+                        if (data.data.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="4" class="text-center">暂无分类数据</td></tr>';
+                            return;
+                        }
+                        
+                        // 创建父级分类映射
+                        const parentMap = {};
+                        data.data.forEach(item => {
+                            parentMap[item.classify1_ID] = item.name;
+                        });
+                        
+                        data.data.forEach(classify => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${classify.classify1_ID}</td>
+                                <td>${classify.name}</td>
+                                <td>${classify.parent_name || '-'}</td>
+                                <td class="action-buttons">
+                                    <button class="btn btn-primary btn-sm" onclick="editClassify(${classify.classify1_ID})">编辑</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteClassify(${classify.classify1_ID})">删除</button>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                        
+                        // 更新分类和商品表单中的下拉选项
+                        updateClassifyOptions(data.data);
+                    }
+                })
+                .catch(error => {
+                    console.error('加载分类数据出错:', error);
+                    document.getElementById('classify-table-body').innerHTML = '<tr><td colspan="4" class="text-center">加载失败</td></tr>';
+                });
+        }
+
+        // 更新分类下拉选项
+        function updateClassifyOptions(classifyData) {
+            const classifySelect = document.getElementById('product-classify');
+            const parentSelect = document.getElementById('classify-parent');
+            
+            // 清空现有选项
+            classifySelect.innerHTML = '<option value="">请选择分类</option>';
+            parentSelect.innerHTML = '<option value="">无</option>';
+            
+            // 添加分类选项
+            classifyData.forEach(classify => {
+                const option = document.createElement('option');
+                option.value = classify.classify1_ID;
+                option.textContent = classify.name;
+                classifySelect.appendChild(option.cloneNode(true));
+                parentSelect.appendChild(option.cloneNode(true));
+            });
+        }
+
+        // 打开分类模态框
+        function openClassifyModal(classify = null) {
+            const modal = document.getElementById('classify-modal');
+            const title = document.getElementById('classify-modal-title');
+            
+            if (classify) {
+                // 编辑模式
+                title.textContent = '编辑分类';
+                document.getElementById('classify-id').value = classify.classify1_ID;
+                document.getElementById('classify-name').value = classify.name;
+                document.getElementById('classify-parent').value = classify.parentID || '';
+            } else {
+                // 添加模式
+                title.textContent = '添加分类';
+                document.getElementById('classify-id').value = '';
+            }
+            
+            openModal(modal);
+        }
+
+        // 编辑分类
+        function editClassify(classifyId) {
+            fetch('/api/inventory/classify')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const classify = data.data.find(c => c.classify1_ID == classifyId);
+                        if (classify) {
+                            openClassifyModal(classify);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('获取分类数据出错:', error);
+                    showToast('获取分类数据失败', 'error');
+                });
+        }
+
+        // 删除分类
+        function deleteClassify(classifyId) {
+            if (confirm('确定要删除这个分类吗？')) {
+                fetch(`/api/inventory/classify/${classifyId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast('分类删除成功');
+                        loadClassifyData();
+                    } else {
+                        showToast('分类删除失败: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除分类出错:', error);
+                    showToast('删除分类失败', 'error');
+                });
+            }
+        }
+
+        // 处理分类表单提交
+        function handleClassifySubmit(e) {
+            e.preventDefault();
+            
+            const classifyId = document.getElementById('classify-id').value;
+            const classifyData = {
+                name: document.getElementById('classify-name').value,
+                parentID: document.getElementById('classify-parent').value || null
+            };
+            
+            const method = classifyId ? 'PUT' : 'POST';
+            const url = classifyId ? `/api/inventory/classify/${classifyId}` : '/api/inventory/classify';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(classifyData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast(classifyId ? '分类更新成功' : '分类添加成功');
+                    closeModal(document.getElementById('classify-modal'));
+                    loadClassifyData();
+                } else {
+                    showToast('操作失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('保存分类出错:', error);
+                showToast('保存分类失败', 'error');
+            });
+        }
+
+        // 加载品牌数据
+        function loadBrandsData() {
+            fetch('/api/inventory/brands')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const tbody = document.getElementById('brands-table-body');
+                        tbody.innerHTML = '';
+                        
+                        if (data.data.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="3" class="text-center">暂无品牌数据</td></tr>';
+                            return;
+                        }
+                        
+                        data.data.forEach(brand => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${brand.brandID}</td>
+                                <td>${brand.brandname}</td>
+                                <td class="action-buttons">
+                                    <button class="btn btn-primary btn-sm" onclick="editBrand(${brand.brandID})">编辑</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteBrand(${brand.brandID})">删除</button>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                        
+                        // 更新商品表单中的品牌选项
+                        updateBrandOptions(data.data);
+                    }
+                })
+                .catch(error => {
+                    console.error('加载品牌数据出错:', error);
+                    document.getElementById('brands-table-body').innerHTML = '<tr><td colspan="3" class="text-center">加载失败</td></tr>';
+                });
+        }
+
+        // 更新品牌下拉选项
+        function updateBrandOptions(brandData) {
+            const brandSelect = document.getElementById('product-brand');
+            brandSelect.innerHTML = '<option value="">请选择品牌</option>';
+            
+            brandData.forEach(brand => {
+                const option = document.createElement('option');
+                option.value = brand.brandID;
+                option.textContent = brand.brandname;
+                brandSelect.appendChild(option);
+            });
+        }
+
+        // 打开品牌模态框
+        function openBrandModal(brand = null) {
+            const modal = document.getElementById('brand-modal');
+            const title = document.getElementById('brand-modal-title');
+            
+            if (brand) {
+                // 编辑模式
+                title.textContent = '编辑品牌';
+                document.getElementById('brand-id').value = brand.brandID;
+                document.getElementById('brand-name').value = brand.brandname;
+            } else {
+                // 添加模式
+                title.textContent = '添加品牌';
+                document.getElementById('brand-id').value = '';
+            }
+            
+            openModal(modal);
+        }
+
+        // 编辑品牌
+        function editBrand(brandId) {
+            fetch('/api/inventory/brands')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const brand = data.data.find(b => b.brandID == brandId);
+                        if (brand) {
+                            openBrandModal(brand);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('获取品牌数据出错:', error);
+                    showToast('获取品牌数据失败', 'error');
+                });
+        }
+
+        // 删除品牌
+        function deleteBrand(brandId) {
+            if (confirm('确定要删除这个品牌吗？')) {
+                fetch(`/api/inventory/brands/${brandId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast('品牌删除成功');
+                        loadBrandsData();
+                    } else {
+                        showToast('品牌删除失败: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除品牌出错:', error);
+                    showToast('删除品牌失败', 'error');
+                });
+            }
+        }
+
+        // 处理品牌表单提交
+        function handleBrandSubmit(e) {
+            e.preventDefault();
+            
+            const brandId = document.getElementById('brand-id').value;
+            const brandData = {
+                brandname: document.getElementById('brand-name').value
+            };
+            
+            const method = brandId ? 'PUT' : 'POST';
+            const url = brandId ? `/api/inventory/brands/${brandId}` : '/api/inventory/brands';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(brandData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast(brandId ? '品牌更新成功' : '品牌添加成功');
+                    closeModal(document.getElementById('brand-modal'));
+                    loadBrandsData();
+                } else {
+                    showToast('操作失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('保存品牌出错:', error);
+                showToast('保存品牌失败', 'error');
+            });
+        }
+
+        // 加载商品数据
+        function loadProductsData() {
+            Promise.all([
+                fetch('/api/inventory/products').then(response => response.json()),
+                fetch('/api/inventory/classify').then(response => response.json()),
+                fetch('/api/inventory/brands').then(response => response.json())
+            ])
+            .then(([productsData, classifyData, brandsData]) => {
+                if (productsData.status === 'success' && classifyData.status === 'success' && brandsData.status === 'success') {
+                    const tbody = document.getElementById('products-table-body');
+                    tbody.innerHTML = '';
+                    
+                    if (productsData.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center">暂无商品数据</td></tr>';
+                        return;
+                    }
+                    
+                    // 创建分类和品牌映射
+                    const classifyMap = {};
+                    const brandMap = {};
+                    
+                    classifyData.data.forEach(classify => {
+                        classifyMap[classify.classify1_ID] = classify.name;
+                    });
+                    
+                    brandsData.data.forEach(brand => {
+                        brandMap[brand.brandID] = brand.brandname;
+                    });
+                    
+                    productsData.data.forEach(product => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${product.productID}</td>
+                            <td>${product.product_name}</td>
+                            <td>${classifyMap[product.classify_level1_classify1_ID] || '未知'}</td>
+                            <td>${brandMap[product.brand_brandID] || '未知'}</td>
+                            <td>${product.product_baozhiqi}个月</td>
+                            <td>${product.local}</td>
+                            <td class="action-buttons">
+                                <button class="btn btn-primary btn-sm" onclick="editProduct(${product.productID})">编辑</button>
+                                <button class="btn btn-success btn-sm" onclick="addSpecForProduct(${product.productID}, '${product.product_name}')">规格</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteProduct(${product.productID})">删除</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('加载商品数据出错:', error);
+                document.getElementById('products-table-body').innerHTML = '<tr><td colspan="7" class="text-center">加载失败</td></tr>';
+            });
+        }
+
+        // 打开商品模态框
+        function openProductModal(product = null) {
+            const modal = document.getElementById('product-modal');
+            const title = document.getElementById('product-modal-title');
+            
+            if (product) {
+                // 编辑模式
+                title.textContent = '编辑商品';
+                document.getElementById('product-id').value = product.productID;
+                document.getElementById('product-name').value = product.product_name;
+                document.getElementById('product-classify').value = product.classify_level1_classify1_ID;
+                document.getElementById('product-brand').value = product.brand_brandID;
+                document.getElementById('product-baozhiqi').value = product.product_baozhiqi;
+                document.getElementById('product-local').value = product.local;
+            } else {
+                // 添加模式
+                title.textContent = '添加商品';
+                document.getElementById('product-id').value = '';
+            }
+            
+            openModal(modal);
+        }
+
+        // 编辑商品
+        function editProduct(productId) {
+            fetch('/api/inventory/products')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const product = data.data.find(p => p.productID == productId);
+                        if (product) {
+                            openProductModal(product);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('获取商品数据出错:', error);
+                    showToast('获取商品数据失败', 'error');
+                });
+        }
+
+        // 删除商品
+        function deleteProduct(productId) {
+            if (confirm('确定要删除这个商品吗？')) {
+                fetch(`/api/inventory/products/${productId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast('商品删除成功');
+                        loadProductsData();
+                    } else {
+                        showToast('商品删除失败: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除商品出错:', error);
+                    showToast('删除商品失败', 'error');
+                });
+            }
+        }
+
+        // 处理商品表单提交
+        function handleProductSubmit(e) {
+            e.preventDefault();
+            
+            const productId = document.getElementById('product-id').value;
+            const productData = {
+                product_name: document.getElementById('product-name').value,
+                classify_level1_classify1_ID: document.getElementById('product-classify').value,
+                brand_brandID: document.getElementById('product-brand').value,
+                product_baozhiqi: document.getElementById('product-baozhiqi').value,
+                local: document.getElementById('product-local').value
+            };
+            
+            const method = productId ? 'PUT' : 'POST';
+            const url = productId ? `/api/inventory/products/${productId}` : '/api/inventory/products';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(productData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast(productId ? '商品更新成功' : '商品添加成功');
+                    closeModal(document.getElementById('product-modal'));
+                    loadProductsData();
+                } else {
+                    showToast('操作失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('保存商品出错:', error);
+                showToast('保存商品失败', 'error');
+            });
+        }
+
+        // 为商品添加规格
+        function addSpecForProduct(productId, productName) {
+            document.getElementById('spec-product-id').value = productId;
+            document.getElementById('spec-product-name').textContent = productName;
+            openSpecModal();
+        }
+
+        // 加载规格数据
+        function loadSpecsData() {
+            fetch('/api/inventory/specs')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const tbody = document.getElementById('specs-table-body');
+                        tbody.innerHTML = '';
+                        
+                        if (data.data.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="7" class="text-center">暂无规格数据</td></tr>';
+                            return;
+                        }
+                        
+                        data.data.forEach(spec => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${spec.specID}</td>
+                                <td>${spec.product_name || '未知'}</td>
+                                <td>${spec.spec_name}</td>
+                                <td>${spec.spec_value}</td>
+                                <td>${spec.barcode || '-'}</td>
+                                <td>${spec.总库存}</td>
+                                <td class="action-buttons">
+                                    <button class="btn btn-primary btn-sm" onclick="editSpec(${spec.specID})">编辑</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteSpec(${spec.specID})">删除</button>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('加载规格数据出错:', error);
+                    document.getElementById('specs-table-body').innerHTML = '<tr><td colspan="7" class="text-center">加载失败</td></tr>';
+                });
+        }
+
+        // 打开规格模态框
+        function openSpecModal(spec = null) {
+            const modal = document.getElementById('spec-modal');
+            const title = document.getElementById('spec-modal-title');
+            
+            if (spec) {
+                // 编辑模式
+                title.textContent = '编辑规格';
+                document.getElementById('spec-id').value = spec.specID;
+                document.getElementById('spec-product-id').value = spec.product_productID;
+                document.getElementById('spec-product-name').textContent = spec.product_name || '未知';
+                document.getElementById('spec-name').value = spec.spec_name;
+                document.getElementById('spec-value').value = spec.spec_value;
+                document.getElementById('spec-barcode').value = spec.barcode || '';
+                document.getElementById('spec-stock').value = spec.总库存;
+                document.getElementById('spec-picture').value = spec.picture || '';
+            } else {
+                // 添加模式
+                title.textContent = '添加规格';
+                document.getElementById('spec-id').value = '';
+            }
+            
+            openModal(modal);
+        }
+
+        // 编辑规格
+        function editSpec(specId) {
+            fetch('/api/inventory/specs')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const spec = data.data.find(s => s.specID == specId);
+                        if (spec) {
+                            openSpecModal(spec);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('获取规格数据出错:', error);
+                    showToast('获取规格数据失败', 'error');
+                });
+        }
+
+        // 删除规格
+        function deleteSpec(specId) {
+            if (confirm('确定要删除这个规格吗？')) {
+                fetch(`/api/inventory/specs/${specId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast('规格删除成功');
+                        loadSpecsData();
+                    } else {
+                        showToast('规格删除失败: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除规格出错:', error);
+                    showToast('删除规格失败', 'error');
+                });
+            }
+        }
+
+        // 处理规格表单提交
+        function handleSpecSubmit(e) {
+            e.preventDefault();
+            
+            const specId = document.getElementById('spec-id').value;
+            const specData = {
+                spec_name: document.getElementById('spec-name').value,
+                spec_value: document.getElementById('spec-value').value,
+                barcode: document.getElementById('spec-barcode').value,
+                总库存: document.getElementById('spec-stock').value,
+                picture: document.getElementById('spec-picture').value,
+                product_productID: document.getElementById('spec-product-id').value
+            };
+            
+            const method = specId ? 'PUT' : 'POST';
+            const url = specId ? `/api/inventory/specs/${specId}` : '/api/inventory/specs';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(specData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast(specId ? '规格更新成功' : '规格添加成功');
+                    closeModal(document.getElementById('spec-modal'));
+                    loadSpecsData();
+                } else {
+                    showToast('操作失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('保存规格出错:', error);
+                showToast('保存规格失败', 'error');
+            });
+        }
+
+        // 加载经销商数据
+        function loadDealersData() {
+            fetch('/api/inventory/dealers')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const tbody = document.getElementById('dealers-table-body');
+                        tbody.innerHTML = '';
+                        
+                        if (data.data.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="5" class="text-center">暂无经销商数据</td></tr>';
+                            return;
+                        }
+                        
+                        data.data.forEach(dealer => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${dealer.dealerID}</td>
+                                <td>${dealer.dealer_name}</td>
+                                <td>${dealer.dealer_tel}</td>
+                                <td>${dealer.dealer_address}</td>
+                                <td class="action-buttons">
+                                    <button class="btn btn-primary btn-sm" onclick="editDealer(${dealer.dealerID})">编辑</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteDealer(${dealer.dealerID})">删除</button>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                        
+                        // 更新入库表单中的经销商选项
+                        updateDealerOptions(data.data);
+                    }
+                })
+                .catch(error => {
+                    console.error('加载经销商数据出错:', error);
+                    document.getElementById('dealers-table-body').innerHTML = '<tr><td colspan="5" class="text-center">加载失败</td></tr>';
+                });
+        }
+
+        // 更新经销商下拉选项
+        function updateDealerOptions(dealerData) {
+            const dealerSelect = document.getElementById('stock-in-dealer');
+            dealerSelect.innerHTML = '<option value="">请选择经销商</option>';
+            
+            dealerData.forEach(dealer => {
+                const option = document.createElement('option');
+                option.value = dealer.dealerID;
+                option.textContent = dealer.dealer_name;
+                dealerSelect.appendChild(option);
+            });
+        }
+
+        // 打开经销商模态框
+        function openDealerModal(dealer = null) {
+            const modal = document.getElementById('dealer-modal');
+            const title = document.getElementById('dealer-modal-title');
+            
+            if (dealer) {
+                // 编辑模式
+                title.textContent = '编辑经销商';
+                document.getElementById('dealer-id').value = dealer.dealerID;
+                document.getElementById('dealer-name').value = dealer.dealer_name;
+                document.getElementById('dealer-tel').value = dealer.dealer_tel;
+                document.getElementById('dealer-address').value = dealer.dealer_address;
+            } else {
+                // 添加模式
+                title.textContent = '添加经销商';
+                document.getElementById('dealer-id').value = '';
+            }
+            
+            openModal(modal);
+        }
+
+        // 编辑经销商
+        function editDealer(dealerId) {
+            fetch('/api/inventory/dealers')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const dealer = data.data.find(d => d.dealerID == dealerId);
+                        if (dealer) {
+                            openDealerModal(dealer);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('获取经销商数据出错:', error);
+                    showToast('获取经销商数据失败', 'error');
+                });
+        }
+
+        // 删除经销商
+        function deleteDealer(dealerId) {
+            if (confirm('确定要删除这个经销商吗？')) {
+                fetch(`/api/inventory/dealers/${dealerId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast('经销商删除成功');
+                        loadDealersData();
+                    } else {
+                        showToast('经销商删除失败: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除经销商出错:', error);
+                    showToast('删除经销商失败', 'error');
+                });
+            }
+        }
+
+        // 处理经销商表单提交
+        function handleDealerSubmit(e) {
+            e.preventDefault();
+            
+            const dealerId = document.getElementById('dealer-id').value;
+            const dealerData = {
+                dealer_name: document.getElementById('dealer-name').value,
+                dealer_tel: document.getElementById('dealer-tel').value,
+                dealer_address: document.getElementById('dealer-address').value
+            };
+            
+            const method = dealerId ? 'PUT' : 'POST';
+            const url = dealerId ? `/api/inventory/dealers/${dealerId}` : '/api/inventory/dealers';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dealerData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast(dealerId ? '经销商更新成功' : '经销商添加成功');
+                    closeModal(document.getElementById('dealer-modal'));
+                    loadDealersData();
+                } else {
+                    showToast('操作失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('保存经销商出错:', error);
+                showToast('保存经销商失败', 'error');
+            });
+        }
+
+        // 加载入库数据
+        function loadStockInData() {
+            Promise.all([
+                fetch('/api/inventory/stock_in_records').then(response => response.json()),
+                fetch('/api/inventory/dealers').then(response => response.json())
+            ])
+            .then(([stockInData, dealersData]) => {
+                if (stockInData.status === 'success' && dealersData.status === 'success') {
+                    const tbody = document.getElementById('stock-in-table-body');
+                    tbody.innerHTML = '';
+                    
+                    if (stockInData.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="9" class="text-center">暂无入库记录</td></tr>';
+                        return;
+                    }
+                    
+                    // 创建经销商映射
+                    const dealerMap = {};
+                    dealersData.data.forEach(dealer => {
+                        dealerMap[dealer.dealerID] = dealer.dealer_name;
+                    });
+                    
+                    stockInData.data.forEach(record => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${record.stock_inID}</td>
+                            <td>${dealerMap[record.dealer_dealerID] || '未知'}</td>
+                            <td>${record.stock_in_date ? new Date(record.stock_in_date).toLocaleDateString() : '-'}</td>
+                            <td>¥${parseFloat(record.total_amount).toFixed(2)}</td>
+                            <td>${record.product_name || '-'}</td>
+                            <td>${record.spec_name ? record.spec_name + ': ' + record.spec_value : '-'}</td>
+                            <td>${record.quantity}</td>
+                            <td>¥${parseFloat(record.price_in).toFixed(2)}</td>
+                            <td>${record.product_date || '-'}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('加载入库数据出错:', error);
+                document.getElementById('stock-in-table-body').innerHTML = '<tr><td colspan="9" class="text-center">加载失败</td></tr>';
+            });
+        }
+
+        // 打开入库模态框
+        function openStockInModal() {
+            const modal = document.getElementById('stock-in-modal');
+            const title = document.getElementById('stock-in-modal-title');
+            
+            // 清空明细表，保留一行空行
+            const tbody = document.querySelector('#stock-in-detail-table tbody');
+            tbody.innerHTML = `
+                <tr>
+                    <td class="product-name">-</td>
+                    <td>
+                        <select name="spec_id" class="form-control spec-select"></select>
+                    </td>
+                    <td>
+                        <input type="number" name="quantity" class="form-control" min="1" value="1" required>
+                    </td>
+                    <td>
+                        <input type="number" name="price_in" class="form-control" step="0.01" value="0.00" required>
+                    </td>
+                    <td>
+                        <input type="date" name="product_date" class="form-control" required>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm remove-detail-row">删除</button>
+                    </td>
+                </tr>
+            `;
+            
+            // 设置默认日期为今天
+            const today = new Date().toISOString().split('T')[0];
+            document.querySelector('input[name="product_date"]').value = today;
+            
+            title.textContent = '新增入库';
+            openModal(modal);
+        }
+
+        // 添加入库明细行
+        function addDetailRow() {
+            const tbody = document.querySelector('#stock-in-detail-table tbody');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="product-name">-</td>
+                <td>
+                    <select name="spec_id" class="form-control spec-select"></select>
+                </td>
+                <td>
+                    <input type="number" name="quantity" class="form-control" min="1" value="1" required>
+                </td>
+                <td>
+                    <input type="number" name="price_in" class="form-control" step="0.01" value="0.00" required>
+                </td>
+                <td>
+                    <input type="date" name="product_date" class="form-control" required>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm remove-detail-row">删除</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        // 删除入库明细行
+        function removeDetailRow(button) {
+            const row = button.closest('tr');
+            if (document.querySelectorAll('#stock-in-detail-table tbody tr').length > 1) {
+                row.remove();
+            } else {
+                showToast('至少需要保留一行明细', 'error');
+            }
+        }
+
+        // 处理入库表单提交
+        function handleStockInSubmit(e) {
+            e.preventDefault();
+            
+            // 收集表单数据
+            const dealerId = document.getElementById('stock-in-dealer').value;
+            if (!dealerId) {
+                showToast('请选择经销商', 'error');
+                return;
+            }
+            
+            const rows = document.querySelectorAll('#stock-in-detail-table tbody tr');
+            const items = [];
+            let totalAmount = 0;
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const specId = row.querySelector('select[name="spec_id"]').value;
+                const quantity = row.querySelector('input[name="quantity"]').value;
+                const priceIn = row.querySelector('input[name="price_in"]').value;
+                const productDate = row.querySelector('input[name="product_date"]').value;
+                
+                if (!specId || !quantity || !priceIn || !productDate) {
+                    showToast('请填写完整的入库明细', 'error');
+                    return;
+                }
+                
+                const itemTotal = parseFloat(quantity) * parseFloat(priceIn);
+                totalAmount += itemTotal;
+                
+                items.push({
+                    spec_id: specId,
+                    quantity: quantity,
+                    price_in: priceIn,
+                    product_date: productDate
+                });
+            }
+            
+            const stockInData = {
+                dealer_id: dealerId,
+                total_amount: totalAmount.toFixed(2),
+                items: items
+            };
+            
+            fetch('/api/inventory/stock_in', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(stockInData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast('入库成功');
+                    closeModal(document.getElementById('stock-in-modal'));
+                    loadStockInData();
+                } else {
+                    showToast('入库失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('入库出错:', error);
+                showToast('入库失败', 'error');
+            });
+        }
+
+        // 当客户选择改变时，加载对应的宠物
+        document.getElementById('appointment-customer').addEventListener('change', function() {
+            const customerId = this.value;
+            const petSelect = document.getElementById('appointment-pet');
+            
+            if (customerId) {
+                fetch(`/api/pets/customer/${customerId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            petSelect.innerHTML = '<option value="">请选择宠物</option>';
+                            data.data.forEach(pet => {
+                                const option = document.createElement('option');
+                                option.value = pet.petID;
+                                option.textContent = pet.petname;
+                                petSelect.appendChild(option);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('加载宠物出错:', error);
+                    });
+            } else {
+                petSelect.innerHTML = '<option value="">请选择宠物</option>';
+            }
+        });
+
+        // 当商品选择改变时，加载对应的规格
+        document.querySelector('#stock-in-detail-table').addEventListener('change', function(e) {
+            if (e.target.classList.contains('product-select')) {
+                const productId = e.target.value;
+                const row = e.target.closest('tr');
+                const specSelect = row.querySelector('.spec-select');
+                
+                if (productId) {
+                    // 这里应该加载对应商品的规格，但由于API限制，我们暂时不实现
+                    specSelect.innerHTML = '<option value="">请选择规格</option>';
+                } else {
+                    specSelect.innerHTML = '<option value="">请选择规格</option>';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
