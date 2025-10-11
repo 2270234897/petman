@@ -35,13 +35,32 @@ interface StockEditFormProps {
 }
 
 export function StockEditForm({ record, onSubmit, onCancel }: StockEditFormProps) {
-  const [formData, setFormData] = useState<StockEditFormValues>({
-    dealer_id: record?.dealer_id || undefined,
-    stock_in_date: record?.stock_in_date ? new Date(record.stock_in_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
-    items: record?.items || [],
-    operation_type: "in",
-    reason: record?.reason || "",
-  })
+  // 初始化表单数据，确保日期正确格式化
+  const initFormData = () => {
+    let formattedDate = new Date().toISOString().slice(0, 16)
+    
+    if (record?.stock_in_date) {
+      try {
+        // 处理不同格式的日期
+        const dateObj = new Date(record.stock_in_date)
+        if (!isNaN(dateObj.getTime())) {
+          formattedDate = dateObj.toISOString().slice(0, 16)
+        }
+      } catch (error) {
+        console.error("日期解析错误:", error)
+      }
+    }
+
+    return {
+      dealer_id: record?.dealer_id || undefined,
+      stock_in_date: formattedDate,
+      items: record?.items || [],
+      operation_type: "in" as const,
+      reason: record?.reason || "",
+    }
+  }
+
+  const [formData, setFormData] = useState<StockEditFormValues>(initFormData())
   
   const { data: specsData } = useInventoryItems()
   const { data: dealersData } = useDealers()
@@ -49,6 +68,32 @@ export function StockEditForm({ record, onSubmit, onCancel }: StockEditFormProps
   
   const allSpecs = specsData?.data || []
   const dealers = dealersData?.data || []
+
+  // 当 record 改变时，重新初始化表单数据
+  useEffect(() => {
+    if (record) {
+      let formattedDate = new Date().toISOString().slice(0, 16)
+      
+      if (record.stock_in_date) {
+        try {
+          const dateObj = new Date(record.stock_in_date)
+          if (!isNaN(dateObj.getTime())) {
+            formattedDate = dateObj.toISOString().slice(0, 16)
+          }
+        } catch (error) {
+          console.error("日期解析错误:", error)
+        }
+      }
+
+      setFormData({
+        dealer_id: record.dealer_id || undefined,
+        stock_in_date: formattedDate,
+        items: record.items || [],
+        operation_type: "in",
+        reason: record.reason || "",
+      })
+    }
+  }, [record])
   
   // 添加商品到列表
   const addItem = () => {

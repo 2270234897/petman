@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,8 +11,10 @@ import { toast } from 'sonner';
 interface ProductData {
   product_name?: string;
   brand?: string;
+  brand_id?: number; // AI匹配的品牌ID
   specification?: string;
   category?: string;
+  classify_id?: number; // AI匹配的分类ID
   quantity?: number;
   unit_price?: number;
   supplier?: string;
@@ -20,6 +22,8 @@ interface ProductData {
   features?: string;
   barcode?: string;
   notes?: string;
+  shelf_life?: number | string; // 保质期（月数）
+  origin?: string; // 产地
 }
 
 interface ExtractionResult {
@@ -39,6 +43,7 @@ export default function AgentAssistant() {
   const [result, setResult] = useState<ExtractionResult | null>(null);
   const [activeTab, setActiveTab] = useState<'text' | 'image' | 'mixed'>('mixed');
   const [showForm, setShowForm] = useState(false);
+  const [uploadedImageBase64, setUploadedImageBase64] = useState<string>(''); // 保存图片的base64
   
   // 获取品牌和分类数据
   const { data: brandsData } = useBrands();
@@ -62,6 +67,55 @@ export default function AgentAssistant() {
     
     setSelectedImages(newImages);
     setImagePreviews(newPreviews);
+    
+    // 如果删除的是第一张图片，清除base64
+    if (index === 0) {
+      setUploadedImageBase64('');
+    }
+  };
+
+  // 压缩图片函数
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // 限制最大尺寸
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // 压缩为JPEG，质量0.7
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(compressedBase64);
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleSubmit = async () => {
@@ -72,6 +126,18 @@ export default function AgentAssistant() {
 
     setLoading(true);
     setResult(null);
+    
+    // 如果有图片，压缩并转换第一张为base64用于规格图片
+    if (selectedImages.length > 0) {
+      try {
+        const compressedBase64 = await compressImage(selectedImages[0]);
+        setUploadedImageBase64(compressedBase64);
+        console.log('[AI助手] ✅ 图片已压缩，原始大小:', selectedImages[0].size, 'bytes');
+      } catch (error) {
+        console.error('[AI助手] 图片压缩失败:', error);
+        toast.error('图片压缩失败');
+      }
+    }
 
     try {
       let endpoint = '/api/agent/extract-mixed';
@@ -164,58 +230,161 @@ export default function AgentAssistant() {
     }
   };
 
-  // 准备表单初始数据
-  const prepareFormData = () => {
+  // 准备表单初始数据（使用useMemo缓存，避免重复计算和toast提示）
+  const formDataCache = useMemo(() => {
     if (!result?.product_data) return null;
     
     const productData = result.product_data;
     const brands = brandsData?.data || [];
     const categories = classifyData?.data || [];
     
-    // 查找或创建品牌ID
-    let brand_id = undefined;
-    if (productData.brand) {
-      const matchedBrand = brands.find((b: any) => 
-        b.brandname?.toLowerCase() === productData.brand?.toLowerCase()
-      );
-      brand_id = matchedBrand?.brandID;
+    console.log('[AI助手] AI返回的数据:', productData);
+    
+    // 优先使用AI返回的品牌ID（使用 ?? 而不是 || 以支持ID为0的情况）
+    let brand_id = productData.brand_id ?? undefined;
+    let brandMatchStatus = '';
+    
+    if (brand_id !== undefined && brand_id !== null) {
+      // 验证AI返回的ID是否有效
+      const matchedBrand = brands.find((b: any) => b.brandID === brand_id);
+      if (matchedBrand) {
+        console.log('[AI助手] ✅ AI已匹配品牌:', matchedBrand.brandname, 'ID:', brand_id);
+        brandMatchStatus = `matched:${matchedBrand.brandname}`;
+      } else {
+        console.log('[AI助手] ⚠️ AI返回的品牌ID无效:', brand_id);
+        brand_id = undefined;
+        brandMatchStatus = 'invalid';
+      }
+    } else if (productData.brand && productData.brand !== '未知品牌') {
+      brandMatchStatus = `unmatched:${productData.brand}`;
     }
     
-    // 查找分类ID  
-    let classify_id = undefined;
-    if (productData.category) {
-      const matchedCategory = categories.find((c: any) => 
-        c.classify1_name?.includes(productData.category) || 
-        productData.category?.includes(c.classify1_name)
-      );
-      classify_id = matchedCategory?.classify1_ID;
+    // 优先使用AI返回的分类ID（使用 ?? 而不是 || 以支持ID为0的情况）
+    let classify_id = productData.classify_id ?? undefined;
+    let classifyMatchStatus = '';
+    
+    if (classify_id !== undefined && classify_id !== null) {
+      // 验证AI返回的ID是否有效
+      const matchedCategory = categories.find((c: any) => c.classify1_ID === classify_id);
+      if (matchedCategory) {
+        console.log('[AI助手] ✅ AI已匹配分类:', matchedCategory.classify1_name, 'ID:', classify_id);
+        classifyMatchStatus = `matched:${matchedCategory.classify1_name}`;
+      } else {
+        console.log('[AI助手] ⚠️ AI返回的分类ID无效:', classify_id);
+        classify_id = undefined;
+        classifyMatchStatus = 'invalid';
+      }
+    } else if (productData.category) {
+      classifyMatchStatus = `unmatched:${productData.category}`;
     }
     
-    return {
+    // 处理保质期
+    let shelfLife = undefined;
+    if (productData.shelf_life !== null && productData.shelf_life !== undefined) {
+      shelfLife = typeof productData.shelf_life === 'number' 
+        ? productData.shelf_life 
+        : parseInt(productData.shelf_life);
+      
+      if (isNaN(shelfLife)) {
+        shelfLife = undefined;
+        console.log('[AI助手] ⚠️ 保质期解析失败:', productData.shelf_life);
+      } else {
+        console.log('[AI助手] ✅ 保质期已识别:', shelfLife, '个月');
+      }
+    }
+    
+    const formData = {
       product_name: productData.product_name || '',
       brand_id,
       classify_id,
-      product_baozhiqi: productData.shelf_life,
+      product_baozhiqi: shelfLife,
       product_details: productData.features || '',
       local: productData.origin || '',
       specs: [{
         id: Date.now(),
         spec_type_id: undefined,
-        name: '',
+        name: '规格',
         value: productData.specification || '',
         stock: productData.quantity || 1,
         barcode: productData.barcode || '',
-        picture: '',
+        picture: uploadedImageBase64, // 自动填充上传的图片
         unit: ''
       }],
-      // 保留原始AI数据用于提示
-      _aiData: productData
+      // 保留原始AI数据用于调试和提示
+      _aiData: {
+        ...productData,
+        matched_brand_id: brand_id,
+        matched_classify_id: classify_id,
+        brandMatchStatus,
+        classifyMatchStatus
+      }
     };
-  };
+    
+    console.log('[AI助手] 准备的表单数据:', formData);
+    if (uploadedImageBase64) {
+      console.log('[AI助手] ✅ 已自动填充商品图片到规格');
+    }
+    
+    return formData;
+  }, [result?.product_data, brandsData?.data, classifyData?.data, uploadedImageBase64]);
+  
+  // 在formDataCache改变时显示一次性的toast提示
+  useEffect(() => {
+    if (!formDataCache?._aiData) return;
+    
+    const { brandMatchStatus, classifyMatchStatus } = formDataCache._aiData;
+    
+    // 品牌匹配提示
+    if (brandMatchStatus.startsWith('matched:')) {
+      const brandName = brandMatchStatus.split(':')[1];
+      toast.success(`✅ AI已自动匹配品牌: ${brandName}`);
+    } else if (brandMatchStatus.startsWith('unmatched:')) {
+      const brandName = brandMatchStatus.split(':')[1];
+      toast.warning(`⚠️ 品牌"${brandName}"未自动匹配，请手动选择`);
+    }
+    
+    // 分类匹配提示
+    if (classifyMatchStatus.startsWith('matched:')) {
+      const categoryName = classifyMatchStatus.split(':')[1];
+      toast.success(`✅ AI已自动匹配分类: ${categoryName}`);
+    } else if (classifyMatchStatus.startsWith('unmatched:')) {
+      const categoryName = classifyMatchStatus.split(':')[1];
+      toast.warning(`⚠️ 分类"${categoryName}"未自动匹配，请手动选择`);
+    }
+    
+    // 图片填充提示
+    if (uploadedImageBase64 && formDataCache.specs?.[0]?.picture) {
+      toast.success(`📸 商品图片已自动填充到规格中`);
+    }
+  }, [formDataCache, uploadedImageBase64]);
   
   // 处理表单提交
   const handleFormSubmit = async (formData: any) => {
     try {
+      // 先检查条形码是否已存在
+      const barcode = formData.specs?.[0]?.barcode;
+      if (barcode && barcode !== '0' && barcode.trim() !== '') {
+        const checkResponse = await fetch(`http://localhost:5000/api/inventory/check-barcode/${barcode}`);
+        const checkData = await checkResponse.json();
+        
+        if (checkData.exists && checkData.product) {
+          const existingProduct = checkData.product;
+          const confirmMessage = `条形码 ${barcode} 已被商品"${existingProduct.product_name}"使用。\n\n` +
+            `选项：\n` +
+            `- 点击"确定"：清空条形码并创建新商品\n` +
+            `- 点击"取消"：返回修改条形码`;
+          
+          if (!confirm(confirmMessage)) {
+            toast.info('请修改条形码后重试');
+            return;
+          }
+          
+          // 用户选择清空条形码
+          formData.specs[0].barcode = '';
+          toast.info('已清空条形码，将创建新商品');
+        }
+      }
+      
       const response = await fetch('http://localhost:5000/api/inventory/products', {
         method: 'POST',
         headers: {
@@ -234,6 +403,7 @@ export default function AgentAssistant() {
         setImagePreviews([]);
         setResult(null);
         setShowForm(false);
+        setUploadedImageBase64(''); // 清除图片base64
       } else {
         toast.error(`保存失败：${data.message || '未知错误'}`);
       }
@@ -463,6 +633,20 @@ export default function AgentAssistant() {
                           </div>
                         )}
                         
+                        {result.product_data.shelf_life !== undefined && result.product_data.shelf_life !== null && (
+                          <div className="border-b pb-2">
+                            <span className="text-sm text-gray-500">保质期</span>
+                            <p className="font-medium">{result.product_data.shelf_life} 个月</p>
+                          </div>
+                        )}
+                        
+                        {result.product_data.origin && (
+                          <div className="border-b pb-2">
+                            <span className="text-sm text-gray-500">产地</span>
+                            <p className="font-medium">{result.product_data.origin}</p>
+                          </div>
+                        )}
+                        
                         {result.product_data.notes && (
                           <div className="pb-2">
                             <span className="text-sm text-gray-500">备注</span>
@@ -533,13 +717,66 @@ export default function AgentAssistant() {
           <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <h2 className="text-2xl font-bold mb-4">编辑商品信息</h2>
-              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
-                <p className="text-sm text-blue-800">
-                  <strong>AI 提示：</strong> 以下是 AI 识别的信息，请检查并补充完整后保存。未识别的字段请手动填写。
-                </p>
+              <div className="mb-4 space-y-3">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded">
+                  <p className="text-sm text-blue-800">
+                    <strong>✨ AI 识别结果：</strong> AI已自动填充以下信息，请检查并补充完整后保存。
+                  </p>
+                </div>
+                
+                {/* AI识别成功的字段提示 */}
+                {formDataCache?._aiData && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded">
+                    <p className="text-xs font-semibold text-green-800 mb-2">✅ 已自动填充的字段：</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {formDataCache?.product_name && (
+                        <div className="text-green-700">✓ 商品名称</div>
+                      )}
+                      {formDataCache?.brand_id && (
+                        <div className="text-green-700">✓ 品牌（已匹配）</div>
+                      )}
+                      {formDataCache?.classify_id && (
+                        <div className="text-green-700">✓ 分类（已匹配）</div>
+                      )}
+                      {formDataCache?.product_baozhiqi && (
+                        <div className="text-green-700">✓ 保质期</div>
+                      )}
+                      {formDataCache?.local && (
+                        <div className="text-green-700">✓ 产地</div>
+                      )}
+                      {formDataCache?.specs?.[0]?.value && (
+                        <div className="text-green-700">✓ 规格</div>
+                      )}
+                      {formDataCache?.specs?.[0]?.barcode && (
+                        <div className="text-green-700">✓ 条形码</div>
+                      )}
+                      {formDataCache?.specs?.[0]?.picture && (
+                        <div className="text-green-700">✓ 规格图片</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* AI识别但未匹配的字段提示 */}
+                {formDataCache?._aiData && (
+                  (!formDataCache?.brand_id && formDataCache?._aiData.brand) ||
+                  (!formDataCache?.classify_id && formDataCache?._aiData.category)
+                ) && (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+                    <p className="text-xs font-semibold text-yellow-800 mb-2">⚠️ 需要手动选择：</p>
+                    <div className="space-y-1 text-xs text-yellow-700">
+                      {!formDataCache?.brand_id && formDataCache?._aiData.brand && (
+                        <div>• 品牌：AI识别为"{formDataCache?._aiData.brand}"，请在下方下拉框中选择或创建</div>
+                      )}
+                      {!formDataCache?.classify_id && formDataCache?._aiData.category && (
+                        <div>• 分类：AI识别为"{formDataCache?._aiData.category}"，请在下方下拉框中选择或创建</div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
               <ProductForm
-                initialData={prepareFormData()}
+                initialData={formDataCache}
                 brands={brandsData?.data}
                 categories={classifyData?.data}
                 onSubmit={handleFormSubmit}

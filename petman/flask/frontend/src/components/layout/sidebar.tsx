@@ -13,10 +13,12 @@ import {
   Settings,
   Camera,
   Sparkles,
+  Search,
 } from "lucide-react"
 
 const navigation = [
   { name: "仪表板", href: "/", icon: Home },
+  { name: "🌐 智能搜索建商品", href: "/smart-search", icon: Search },
   { name: "宠物管理", href: "/pets", icon: Heart },
   { name: "客户管理", href: "/customers", icon: Users },
   { name: "预约管理", href: "/appointments", icon: Calendar },

@@ -7,6 +7,7 @@ from customers_py import customers_bp
 from appointments_py import appointments_bp
 from inventory_py import inventory_bp
 from agent.agent_routes import agent_bp
+from agent.web_search_routes import web_search_bp
 
 # Load environment variables from .env file
 load_dotenv()
@@ -25,6 +26,7 @@ app.register_blueprint(customers_bp)
 app.register_blueprint(appointments_bp)
 app.register_blueprint(inventory_bp)
 app.register_blueprint(agent_bp)
+app.register_blueprint(web_search_bp)
 
 print("静态文件目录:", app.static_folder)
 print("静态文件存在:", os.path.exists(os.path.join(app.static_folder, 'css/styles.css')))

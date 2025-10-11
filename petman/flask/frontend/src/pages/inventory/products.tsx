@@ -67,7 +67,7 @@ export function InventoryProducts() {
         specID: spec.specID,
         name: spec.spec_name,
         value: spec.spec_value,
-        stock: spec.总库存,
+        stock: spec.total_stock,
         barcode: spec.barcode,
         picture: spec.picture
       }))
@@ -136,6 +136,10 @@ export function InventoryProducts() {
   const getProductCoverImage = (product: any) => {
     // 优先使用商品封面图片，如果没有则使用第一个有图片的规格的图片
     if (product.cover_image && product.cover_image.trim()) {
+      // 检查是否是 base64 数据URI
+      if (product.cover_image.startsWith('data:')) {
+        return product.cover_image
+      }
       // 检查是否是完整的URL
       if (product.cover_image.startsWith('http://') || product.cover_image.startsWith('https://')) {
         return product.cover_image
@@ -147,6 +151,10 @@ export function InventoryProducts() {
     if (product.specs && product.specs.length > 0) {
       const specWithImage = product.specs.find((spec: any) => spec.picture && spec.picture.trim())
       if (specWithImage) {
+        // 检查是否是 base64 数据URI
+        if (specWithImage.picture.startsWith('data:')) {
+          return specWithImage.picture
+        }
         // 检查是否是完整的URL
         if (specWithImage.picture.startsWith('http://') || specWithImage.picture.startsWith('https://')) {
           return specWithImage.picture
@@ -224,7 +232,7 @@ export function InventoryProducts() {
                   {filteredInventory.map((item: any) => {
                     const isExpanded = expandedProducts.has(item.productID)
                     const coverImage = getProductCoverImage(item)
-                    const totalStock = item.specs?.reduce((sum: number, spec: any) => sum + (spec.总库存 || 0), 0) || 0
+                    const totalStock = item.specs?.reduce((sum: number, spec: any) => sum + (spec.total_stock || 0), 0) || 0
                     
                     return (
                       <Card key={item.productID} className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
@@ -274,7 +282,7 @@ export function InventoryProducts() {
                                   {item.classify_name}
                                 </Badge>
                                 <span>保质期: {item.product_baozhiqi ? `${item.product_baozhiqi}个月` : '无保质期'}</span>
-                                <span>总库存: {totalStock}</span>
+                                <span>Stock: {totalStock}</span>
                                 {item.local && (
                                   <span className="text-gray-500">| {item.local}</span>
                                 )}
@@ -339,10 +347,10 @@ export function InventoryProducts() {
                                       <div className="flex justify-between items-start mb-2">
                                         <h5 className="font-medium text-gray-900">{spec.spec_name}</h5>
                                         <Badge 
-                                          variant={spec.总库存 > 0 ? "default" : "destructive"}
+                                          variant={spec.total_stock > 0 ? "default" : "destructive"}
                                           className="text-xs"
                                         >
-                                          库存: {spec.总库存}
+                                          Stock: {spec.total_stock}
                                         </Badge>
                                       </div>
                                       
@@ -359,7 +367,7 @@ export function InventoryProducts() {
                                             <div className="w-8 h-8 rounded overflow-hidden bg-white border">
                                               <img 
                                                 src={
-                                                  spec.picture.startsWith('http://') || spec.picture.startsWith('https://') 
+                                                  spec.picture.startsWith('data:') || spec.picture.startsWith('http://') || spec.picture.startsWith('https://') 
                                                     ? spec.picture 
                                                     : `/api/static/${spec.picture}`
                                                 } 

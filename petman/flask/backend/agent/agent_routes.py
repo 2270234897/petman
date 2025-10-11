@@ -5,7 +5,9 @@ API routes for agent functionality
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 import os
-from typing import List
+from typing import List, Dict, Any
+import pymysql
+from db_config import MYSQL_CONFIG
 from .gemini_client import GeminiClient
 from .product_extractor import ProductExtractor
 from .image_processor import ImageProcessor
@@ -24,6 +26,95 @@ except Exception as e:
     gemini_client = None
     product_extractor = None
     image_processor = None
+
+
+def get_brands_and_categories() -> Dict[str, Any]:
+    """获取数据库中的品牌和分类列表，供AI参考"""
+    connection = None
+    try:
+        connection = pymysql.connect(**MYSQL_CONFIG)
+        with connection.cursor() as cursor:
+            # 获取品牌列表
+            cursor.execute("SELECT brandID, brandname FROM brand ORDER BY brandname")
+            brands = cursor.fetchall()
+            
+            # 获取分类列表（包含层级信息）
+            cursor.execute("""
+                SELECT 
+                    c1.classify1_ID,
+                    c1.name as classify_name,
+                    c1.parentID,
+                    c2.name as parent_name,
+                    c3.name as grandparent_name,
+                    CASE 
+                        WHEN c1.parentID IS NULL THEN 1
+                        WHEN c2.parentID IS NULL THEN 2
+                        ELSE 3
+                    END as level
+                FROM classify_level1 c1
+                LEFT JOIN classify_level1 c2 ON c1.parentID = c2.classify1_ID
+                LEFT JOIN classify_level1 c3 ON c2.parentID = c3.classify1_ID
+                ORDER BY level DESC, c1.classify1_ID
+            """)
+            categories = cursor.fetchall()
+            
+            return {
+                'brands': brands,
+                'categories': categories
+            }
+    except Exception as e:
+        print(f"[Agent] 获取品牌和分类失败: {e}")
+        return {'brands': [], 'categories': []}
+    finally:
+        if connection:
+            connection.close()
+
+
+def format_context_for_ai(brands: List[Dict], categories: List[Dict]) -> str:
+    """格式化品牌和分类信息供AI参考"""
+    context = "\n\n=== 系统中现有的品牌和分类 ===\n"
+    
+    # 格式化品牌
+    if brands:
+        context += "\n【品牌列表】（请从以下品牌中选择最匹配的）：\n"
+        for brand in brands:
+            context += f"  - ID:{brand['brandID']}, 名称:{brand['brandname']}\n"
+    
+    # 格式化分类（按层级）
+    if categories:
+        context += "\n【分类列表】（优先选择三级分类，其次二级，最后一级）：\n"
+        
+        # 三级分类
+        level3 = [c for c in categories if c.get('level') == 3]
+        if level3:
+            context += "\n  三级分类（最优先）：\n"
+            for cat in level3:
+                full_path = f"{cat.get('grandparent_name', '')} > {cat.get('parent_name', '')} > {cat['classify_name']}"
+                context += f"    - ID:{cat['classify1_ID']}, 路径:{full_path}\n"
+        
+        # 二级分类
+        level2 = [c for c in categories if c.get('level') == 2]
+        if level2:
+            context += "\n  二级分类（次优先）：\n"
+            for cat in level2:
+                full_path = f"{cat.get('parent_name', '')} > {cat['classify_name']}"
+                context += f"    - ID:{cat['classify1_ID']}, 路径:{full_path}\n"
+        
+        # 一级分类
+        level1 = [c for c in categories if c.get('level') == 1]
+        if level1:
+            context += "\n  一级分类（最后选择）：\n"
+            for cat in level1:
+                context += f"    - ID:{cat['classify1_ID']}, 名称:{cat['classify_name']}\n"
+    
+    context += "\n=== 匹配说明 ===\n"
+    context += "1. 品牌：请从上述品牌列表中选择最接近的，返回对应的brandID\n"
+    context += "2. 分类：优先匹配三级分类，找不到再匹配二级，最后才选一级，返回classify_id\n"
+    context += "3. 如果确实找不到匹配的品牌，返回brand_id: null，但必须返回原始品牌名称\n"
+    context += "4. 如果找不到合适的分类，选择最接近的或返回classify_id: null\n"
+    context += "=====================================\n\n"
+    
+    return context
 
 
 @agent_bp.route('/health', methods=['GET'])
@@ -61,8 +152,12 @@ def extract_from_text():
         if not text:
             return jsonify({'error': '请提供商品描述文字'}), 400
         
+        # 获取品牌和分类信息
+        db_data = get_brands_and_categories()
+        system_context = format_context_for_ai(db_data['brands'], db_data['categories'])
+        
         # Extract information using Gemini
-        result = gemini_client.extract_product_info_from_text(text)
+        result = gemini_client.extract_product_info_from_text(text, system_context)
         
         if not result.get('success'):
             return jsonify({'error': result.get('error', '提取失败')}), 500
@@ -131,8 +226,12 @@ def extract_from_image():
         # Get additional context
         context = request.form.get('context', '')
         
+        # 获取品牌和分类信息
+        db_data = get_brands_and_categories()
+        system_context = format_context_for_ai(db_data['brands'], db_data['categories'])
+        
         # Extract information using Gemini
-        result = gemini_client.analyze_product_image(processed_image, context)
+        result = gemini_client.analyze_product_image(processed_image, context, system_context)
         
         if not result.get('success'):
             return jsonify({'error': result.get('error', '分析失败')}), 500
@@ -218,12 +317,16 @@ def extract_mixed():
             audio_data = audio_file.read()
             print(f"[Agent Route] 音频大小: {len(audio_data)} bytes")
         
+        # 获取品牌和分类信息
+        db_data = get_brands_and_categories()
+        system_context = format_context_for_ai(db_data['brands'], db_data['categories'])
+        
         # Extract information using Gemini
         print(f"[Agent Route] 开始调用 Gemini API...")
         if processed_images or audio_data:
-            result = gemini_client.process_mixed_input(text, processed_images, audio_data)
+            result = gemini_client.process_mixed_input(text, processed_images, audio_data, system_context)
         else:
-            result = gemini_client.extract_product_info_from_text(text)
+            result = gemini_client.extract_product_info_from_text(text, system_context)
         
         print(f"[Agent Route] Gemini 返回: success={result.get('success')}")
         

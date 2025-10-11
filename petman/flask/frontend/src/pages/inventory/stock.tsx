@@ -21,7 +21,8 @@ import {
   Edit,
   Trash2,
   CheckSquare,
-  Square
+  Square,
+  Check
 } from "lucide-react"
 import { useStockInRecords, useStockInRecordDetail, useDealers, useInventoryItems, useUpdateStockInRecord, useDeleteStockInRecord } from "@/hooks/useApi"
 import { toast } from "sonner"
@@ -37,7 +38,10 @@ export function InventoryStock() {
   const [selectedRecords, setSelectedRecords] = useState<number[]>([])
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [recordToDelete, setRecordToDelete] = useState<number | null>(null)
-  const [editingRecord, setEditingRecord] = useState<any>(null)
+  
+  // 内联编辑状态
+  const [editingRecordId, setEditingRecordId] = useState<number | null>(null)
+  const [editFormData, setEditFormData] = useState<any>(null)
   
   const { data: stockInData, isLoading, refetch } = useStockInRecords()
   const { data: dealersData } = useDealers()
@@ -91,10 +95,22 @@ export function InventoryStock() {
     refetch()
   }
 
+  // 处理编辑入库单提交
+  const handleEditStockInSubmit = (values: any) => {
+    toast.success("✅ 入库单更新成功！")
+    setCurrentView('stock-in-detail')
+    refetch()
+  }
+
+  // 处理编辑入库单取消
+  const handleEditStockInCancel = () => {
+    setCurrentView('stock-in-detail')
+  }
+
   // 处理取消操作
   const handleCancelOperation = () => {
     setCurrentView('stock-in-list')
-    setEditingRecord(null)
+    setSelectedStockInId(null)
   }
 
   // 处理选中/取消选中记录
@@ -115,10 +131,35 @@ export function InventoryStock() {
     }
   }
 
-  // 处理编辑记录
+  // 处理编辑记录 - 内联编辑
   const handleEditRecord = (record: any) => {
-    setEditingRecord(record)
-    setCurrentView('edit-stock-in')
+    setEditingRecordId(record.stock_inID)
+    setEditFormData({ ...record })
+  }
+  
+  // 取消内联编辑
+  const handleCancelInlineEdit = () => {
+    setEditingRecordId(null)
+    setEditFormData(null)
+  }
+  
+  // 保存内联编辑
+  const handleSaveInlineEdit = async () => {
+    if (!editFormData) return
+    
+    try {
+      await updateStockInRecord.mutateAsync({
+        id: editingRecordId!,
+        data: editFormData
+      })
+      toast.success("✅ 入库记录更新成功！")
+      setEditingRecordId(null)
+      setEditFormData(null)
+      refetch()
+    } catch (error) {
+      toast.error("更新失败")
+      console.error(error)
+    }
   }
 
   // 处理删除记录
@@ -173,6 +214,56 @@ export function InventoryStock() {
   }
 
   // 根据当前视图渲染不同的内容
+  if (currentView === 'edit-stock-in' && selectedStockInId) {
+    const selectedRecord = stockInRecords.find((record: any) => record.stock_inID === selectedStockInId)
+    const detailRecord = stockInDetailData?.data
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center space-x-4">
+          <Button onClick={handleEditStockInCancel} variant="outline" className="btn-vibrant-blue">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            返回详情
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">编辑入库单</h1>
+            <p className="text-muted-foreground">
+              修改入库单 #{selectedStockInId} 的基本信息和商品明细
+            </p>
+          </div>
+        </div>
+
+        {detailLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span className="ml-2 text-muted-foreground">加载详情中...</span>
+          </div>
+        ) : detailRecord ? (
+          <StockEditForm 
+            record={{
+              ...selectedRecord,
+              ...detailRecord,
+              stock_inID: selectedStockInId,
+              items: detailRecord.items || detailRecord.details || detailRecord.products || detailRecord.stock_items || []
+            }}
+            onSubmit={handleEditStockInSubmit}
+            onCancel={handleEditStockInCancel}
+          />
+        ) : (
+          <Card className="vibrant-card-orange border-2">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Package className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">未找到入库单</h3>
+              <p className="text-muted-foreground text-center mb-4">
+                无法找到指定的入库单信息
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    )
+  }
+
   if (currentView === 'stock-in-detail' && selectedStockInId) {
     const selectedRecord = stockInRecords.find((record: any) => record.stock_inID === selectedStockInId)
     const detailRecord = stockInDetailData?.data
@@ -282,7 +373,7 @@ export function InventoryStock() {
             {/* 操作按钮 */}
             <div className="flex justify-end space-x-4">
               <Button 
-                onClick={() => handleEditRecord(selectedRecord || detailRecord)}
+                onClick={() => setCurrentView('edit-stock-in')}
                 className="btn-vibrant-green"
               >
                 <Edit className="mr-2 h-4 w-4" />
@@ -356,35 +447,6 @@ export function InventoryStock() {
           onSubmit={handleStockOperationSubmit}
           onCancel={handleCancelOperation}
           operationType="out"
-        />
-      </div>
-    )
-  }
-
-  if (currentView === 'edit-stock-in' && editingRecord) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <Button onClick={handleCancelOperation} variant="outline" className="btn-vibrant-blue">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            返回列表
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">编辑入库记录</h1>
-            <p className="text-muted-foreground">
-              编辑入库单 #{editingRecord.stock_inID}
-            </p>
-          </div>
-        </div>
-        <StockEditForm 
-          record={editingRecord}
-          onSubmit={async (values) => {
-            toast.success("入库记录更新成功！")
-            setCurrentView('stock-in-list')
-            setEditingRecord(null)
-            refetch()
-          }}
-          onCancel={handleCancelOperation}
         />
       </div>
     )
@@ -534,94 +596,174 @@ export function InventoryStock() {
                 </span>
               </div>
 
-              {filteredRecords.map((record: any) => (
-                <div 
-                  key={record.stock_inID} 
-                  className={`flex items-center justify-between p-4 border rounded-lg transition-colors bg-white dark:bg-gray-800 ${
-                    selectedRecords.includes(record.stock_inID) 
-                      ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                      : 'hover:bg-accent/50'
-                  }`}
-                >
-                  <div className="flex items-center space-x-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleSelectRecord(record.stock_inID)}
-                      className="p-1"
-                    >
-                      {selectedRecords.includes(record.stock_inID) ? (
-                        <CheckSquare className="h-4 w-4 text-blue-600" />
-                      ) : (
-                        <Square className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </Button>
-                    <div className="flex items-center space-x-2">
-                      <Package className="h-8 w-8 text-blue-600" />
-                      <div>
-                        <h3 className="font-semibold">入库单 #{record.stock_inID}</h3>
-                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                          <div className="flex items-center space-x-1">
-                            <Building2 className="h-4 w-4" />
-                            <span>{record.dealer_name}</span>
+              {filteredRecords.map((record: any) => {
+                const isEditing = editingRecordId === record.stock_inID
+                
+                return (
+                  <div 
+                    key={record.stock_inID} 
+                    className={`p-4 border rounded-lg transition-all ${
+                      isEditing
+                        ? 'ring-2 ring-green-500 bg-green-50 dark:bg-green-900/20'
+                        : selectedRecords.includes(record.stock_inID) 
+                        ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                        : 'bg-white dark:bg-gray-800 hover:bg-accent/50'
+                    }`}
+                  >
+                    {isEditing ? (
+                      // ===== 内联编辑模式 =====
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b">
+                          <h3 className="font-semibold text-lg flex items-center gap-2">
+                            <Edit className="h-5 w-5 text-green-600" />
+                            编辑入库单 #{record.stock_inID}
+                          </h3>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              onClick={handleSaveInlineEdit}
+                              disabled={updateStockInRecord.isPending}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              {updateStockInRecord.isPending ? (
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              ) : (
+                                <CheckSquare className="h-4 w-4 mr-1" />
+                              )}
+                              保存
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={handleCancelInlineEdit}
+                            >
+                              取消
+                            </Button>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>
-                              {format(new Date(record.stock_in_date), 'yyyy-MM-dd HH:mm', { locale: zhCN })}
-                            </span>
+                        </div>
+
+                        {/* 可编辑字段 */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium block mb-1">供应商</label>
+                            <select 
+                              className="w-full p-2 border rounded-md"
+                              value={editFormData?.dealer_id || ''}
+                              onChange={(e) => setEditFormData({
+                                ...editFormData,
+                                dealer_id: parseInt(e.target.value)
+                              })}
+                            >
+                              {dealers.map((d: any) => (
+                                <option key={d.dealerID} value={d.dealerID}>
+                                  {d.dealer_name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          
+                          <div>
+                            <label className="text-sm font-medium block mb-1">入库日期</label>
+                            <Input
+                              type="datetime-local"
+                              value={editFormData?.stock_in_date?.slice(0, 16) || ''}
+                              onChange={(e) => setEditFormData({
+                                ...editFormData,
+                                stock_in_date: e.target.value
+                              })}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="text-xs text-gray-500 italic">
+                          💡 提示：修改供应商和入库日期后点击保存
+                        </div>
+                      </div>
+                    ) : (
+                      // ===== 正常显示模式 =====
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSelectRecord(record.stock_inID)}
+                            className="p-1"
+                          >
+                            {selectedRecords.includes(record.stock_inID) ? (
+                              <CheckSquare className="h-4 w-4 text-blue-600" />
+                            ) : (
+                              <Square className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </Button>
+                          <div className="flex items-center space-x-2">
+                            <Package className="h-8 w-8 text-blue-600" />
+                            <div>
+                              <h3 className="font-semibold">入库单 #{record.stock_inID}</h3>
+                              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                                <div className="flex items-center space-x-1">
+                                  <Building2 className="h-4 w-4" />
+                                  <span>{record.dealer_name}</span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>
+                                    {format(new Date(record.stock_in_date), 'yyyy-MM-dd HH:mm', { locale: zhCN })}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-6">
+                          <div className="text-center">
+                            <p className="text-sm text-muted-foreground">商品数量</p>
+                            <Badge variant="secondary" className="text-orange-600">
+                              {record.item_count} 件
+                            </Badge>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm text-muted-foreground">总金额</p>
+                            <p className="font-semibold text-green-600">
+                              ¥{parseFloat(record.total_amount).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button 
+                              variant="default" 
+                              size="sm" 
+                              onClick={() => handleViewStockInDetail(record.stock_inID)}
+                              className="btn-vibrant-blue"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              查看详情
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleEditRecord(record)}
+                              className="btn-vibrant-green"
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              编辑
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleSingleDelete(record.stock_inID)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              disabled={deleteStockInRecord.isPending}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              删除
+                            </Button>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
-                  
-                  <div className="flex items-center space-x-6">
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground">商品数量</p>
-                      <Badge variant="secondary" className="text-orange-600">
-                        {record.item_count} 件
-                      </Badge>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground">总金额</p>
-                      <p className="font-semibold text-green-600">
-                        ¥{parseFloat(record.total_amount).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        onClick={() => handleViewStockInDetail(record.stock_inID)}
-                        className="btn-vibrant-blue"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        查看详情
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleEditRecord(record)}
-                        className="btn-vibrant-green"
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        编辑
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleSingleDelete(record.stock_inID)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        disabled={deleteStockInRecord.isPending}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        删除
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </CardContent>

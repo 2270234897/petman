@@ -248,7 +248,7 @@ async function importCSVData(csvFilePath: string) {
             spec_value: spec.规格 || '标准',
             barcode: spec.商品条形码 || '',
             picture: '',
-            总库存: parseInt(spec.库存) || 0,
+            total_stock: parseInt(spec.stock) || 0,
             unit: '个'
           }))
         }

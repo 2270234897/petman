@@ -308,7 +308,7 @@ export function CSVImport({ onImportComplete }: CSVImportProps) {
               spec_value: spec.spec_value || '标准',
               barcode: spec.barcode ? String(spec.barcode).trim() : '', // 改为字符串类型
               picture: spec.picture || '',
-              总库存: spec.总库存 || 0, // 确保是数字类型
+              total_stock: spec.total_stock || 0,
               unit: '个' // 默认单位
             }))
           }
@@ -335,7 +335,7 @@ export function CSVImport({ onImportComplete }: CSVImportProps) {
             if (!spec.spec_name || !spec.spec_name.trim()) {
               throw new Error('规格名称不能为空')
             }
-            if (spec.总库存 < 0) {
+            if (spec.total_stock < 0) {
               throw new Error('库存不能为负数')
             }
             
@@ -648,7 +648,7 @@ export function CSVImport({ onImportComplete }: CSVImportProps) {
                         <td className="px-3 py-2">{product.brand_name}</td>
                         <td className="px-3 py-2">{product.classify_name}</td>
                         <td className="px-3 py-2">{product.spec_value}</td>
-                        <td className="px-3 py-2">{product.总库存}</td>
+                        <td className="px-3 py-2">{product.total_stock}</td>
                         <td className="px-3 py-2">¥{product.price}</td>
                       </tr>
                     ))}

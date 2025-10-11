@@ -294,10 +294,10 @@ def get_products():
             cursor.execute(product_sql)
             products = cursor.fetchall()
             
-            # 获取所有规格信息
+            # Get all spec info (including total stock)
             spec_sql = """
             SELECT s.specID, s.product_productID, s.spec_type_id, s.spec_name, s.spec_value, 
-                   s.barcode, s.picture, st.unit as spec_unit
+                   s.barcode, s.picture, s.total_stock, st.unit as spec_unit
             FROM spec s
             LEFT JOIN spec_type st ON s.spec_type_id = st.spec_type_id
             ORDER BY s.product_productID, s.specID
@@ -402,14 +402,22 @@ def add_product():
                     
                     # 检查条形码唯一性（允许同一商品的不同规格使用相同条形码）
                     barcode = spec.get('barcode', 0)
-                    if barcode and barcode != 0:
+                    # 只有当条形码不为空、不为0、不为'0'时才检查唯一性
+                    if barcode and barcode != 0 and barcode != '0' and str(barcode).strip() != '':
                         # 检查条形码是否被其他商品使用（不包括当前正在创建的商品）
-                        cursor.execute("SELECT COUNT(*) as count FROM spec WHERE barcode = %s AND product_productID != %s", (barcode, product_id))
-                        barcode_result = cursor.fetchone()
-                        if barcode_result['count'] > 0:
+                        cursor.execute("""
+                            SELECT s.specID, p.product_name, p.productID 
+                            FROM spec s 
+                            JOIN product p ON s.product_productID = p.productID 
+                            WHERE s.barcode = %s AND s.product_productID != %s
+                        """, (barcode, product_id))
+                        conflicting_specs = cursor.fetchall()
+                        if len(conflicting_specs) > 0:
+                            conflict_info = conflicting_specs[0]
+                            print(f"[创建商品] 条形码冲突：{barcode} 已被商品 '{conflict_info['product_name']}' (ID:{conflict_info['productID']}) 使用")
                             return jsonify({
                                 'status': 'error',
-                                'message': f'条形码 {barcode} 已被其他商品使用，请使用其他条形码'
+                                'message': f'条形码 {barcode} 已被商品"{conflict_info["product_name"]}"使用，请使用其他条形码或留空'
                             }), 400
                     
                     # 确保spec_type_id不为None
@@ -496,16 +504,24 @@ def update_product(product_id):
                             spec_type_id = cursor.lastrowid
                     
                     if i < len(existing_spec_ids):
-                        # 检查条形码唯一性（排除当前规格，允许同一商品的不同规格使用相同条形码）
+                        # 检查条形码唯一性（排除当前商品的所有规格）
                         barcode = spec.get('barcode', 0)
-                        if barcode and barcode != 0:
-                            cursor.execute("SELECT COUNT(*) as count FROM spec WHERE barcode = %s AND specID != %s AND product_productID != %s", 
-                                         (barcode, existing_spec_ids[i], product_id))
-                            barcode_result = cursor.fetchone()
-                            if barcode_result['count'] > 0:
+                        # 只有当条形码不为空、不为0、不为'0'时才检查唯一性
+                        if barcode and barcode != 0 and barcode != '0' and str(barcode).strip() != '':
+                            # 关键修复：排除当前商品的所有规格，只检查其他商品
+                            cursor.execute("""
+                                SELECT s.specID, p.product_name, p.productID 
+                                FROM spec s 
+                                JOIN product p ON s.product_productID = p.productID 
+                                WHERE s.barcode = %s AND s.product_productID != %s
+                            """, (barcode, product_id))
+                            conflicting_specs = cursor.fetchall()
+                            if len(conflicting_specs) > 0:
+                                conflict_info = conflicting_specs[0]
+                                print(f"[更新商品] 条形码冲突：{barcode} 已被商品 '{conflict_info['product_name']}' (ID:{conflict_info['productID']}) 使用")
                                 return jsonify({
                                     'status': 'error',
-                                    'message': f'条形码 {barcode} 已被其他商品使用，请使用其他条形码'
+                                    'message': f'条形码 {barcode} 已被商品"{conflict_info["product_name"]}"使用，请使用其他条形码或留空'
                                 }), 400
                         
                         # 更新现有规格
@@ -522,15 +538,24 @@ def update_product(product_id):
                             existing_spec_ids[i]
                         ))
                     else:
-                        # 检查条形码唯一性（允许同一商品的不同规格使用相同条形码）
+                        # 检查条形码唯一性（排除当前商品的所有规格）
                         barcode = spec.get('barcode', 0)
-                        if barcode and barcode != 0:
-                            cursor.execute("SELECT COUNT(*) as count FROM spec WHERE barcode = %s AND product_productID != %s", (barcode, product_id))
-                            barcode_result = cursor.fetchone()
-                            if barcode_result['count'] > 0:
+                        # 只有当条形码不为空、不为0、不为'0'时才检查唯一性
+                        if barcode and barcode != 0 and barcode != '0' and str(barcode).strip() != '':
+                            # 关键修复：排除当前商品的所有规格，只检查其他商品
+                            cursor.execute("""
+                                SELECT s.specID, p.product_name, p.productID 
+                                FROM spec s 
+                                JOIN product p ON s.product_productID = p.productID 
+                                WHERE s.barcode = %s AND s.product_productID != %s
+                            """, (barcode, product_id))
+                            conflicting_specs = cursor.fetchall()
+                            if len(conflicting_specs) > 0:
+                                conflict_info = conflicting_specs[0]
+                                print(f"[更新商品-新增规格] 条形码冲突：{barcode} 已被商品 '{conflict_info['product_name']}' (ID:{conflict_info['productID']}) 使用")
                                 return jsonify({
                                     'status': 'error',
-                                    'message': f'条形码 {barcode} 已被其他商品使用，请使用其他条形码'
+                                    'message': f'条形码 {barcode} 已被商品"{conflict_info["product_name"]}"使用，请使用其他条形码或留空'
                                 }), 400
                         
                         # 插入新规格
@@ -764,6 +789,57 @@ def update_spec(spec_id):
     except Exception as e:
         if connection:
             connection.rollback()
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+    finally:
+        if connection:
+            connection.close()
+
+@inventory_bp.route('/check-barcode/<barcode>', methods=['GET'])
+def check_barcode(barcode):
+    """检查条形码是否已存在，返回使用该条形码的商品信息"""
+    connection = None
+    try:
+        # 跳过空条形码
+        if not barcode or barcode == '0':
+            return jsonify({
+                'status': 'success',
+                'exists': False
+            })
+        
+        connection = pymysql.connect(**MYSQL_CONFIG)
+        with connection.cursor() as cursor:
+            sql = """
+            SELECT s.specID, s.barcode, p.productID, p.product_name, p.brand_brandID, b.brandname
+            FROM spec s
+            JOIN product p ON s.product_productID = p.productID
+            LEFT JOIN brand b ON p.brand_brandID = b.brandID
+            WHERE s.barcode = %s
+            LIMIT 1
+            """
+            cursor.execute(sql, (barcode,))
+            result = cursor.fetchone()
+            
+            if result:
+                return jsonify({
+                    'status': 'success',
+                    'exists': True,
+                    'product': {
+                        'product_id': result['productID'],
+                        'product_name': result['product_name'],
+                        'brand_name': result['brandname'],
+                        'spec_id': result['specID'],
+                        'barcode': result['barcode']
+                    }
+                })
+            else:
+                return jsonify({
+                    'status': 'success',
+                    'exists': False
+                })
+    except Exception as e:
         return jsonify({
             'status': 'error',
             'message': str(e)
@@ -1049,6 +1125,14 @@ def add_stock_in():
                     item['price_in'],
                     item['product_date']
                 ))
+                
+                # Update spec total stock
+                cursor.execute("""
+                    UPDATE spec 
+                    SET total_stock = COALESCE(total_stock, 0) + %s 
+                    WHERE specID = %s
+                """, (item['quantity'], item['spec_id']))
+                print(f"[Stock In] Spec ID {item['spec_id']} stock increased by {item['quantity']}")
 
             connection.commit()
             return jsonify({
@@ -1103,8 +1187,25 @@ def update_stock_in(stock_in_id):
             
             # 如果有明细数据，更新明细
             if 'items' in data and isinstance(data['items'], list):
+                # 🔧 关键修复：先获取旧明细，用于恢复库存
+                cursor.execute("""
+                    SELECT spec_specID, quantity 
+                    FROM stock_in_detail 
+                    WHERE stock_inID = %s
+                """, (stock_in_id,))
+                old_details = cursor.fetchall()
+                
                 # 删除现有明细
                 cursor.execute("DELETE FROM stock_in_detail WHERE stock_inID = %s", (stock_in_id,))
+                
+                # Decrease old stock
+                for old_detail in old_details:
+                    cursor.execute("""
+                        UPDATE spec 
+                        SET total_stock = COALESCE(total_stock, 0) - %s 
+                        WHERE specID = %s
+                    """, (old_detail['quantity'], old_detail['spec_specID']))
+                    print(f"[Update Stock In] Spec ID {old_detail['spec_specID']} stock decreased by {old_detail['quantity']}")
                 
                 # 添加新明细
                 for item in data['items']:
@@ -1124,6 +1225,14 @@ def update_stock_in(stock_in_id):
                         item['price_in'],
                         item['product_date']
                     ))
+                    
+                    # Increase new stock
+                    cursor.execute("""
+                        UPDATE spec 
+                        SET total_stock = COALESCE(total_stock, 0) + %s 
+                        WHERE specID = %s
+                    """, (item['quantity'], item['spec_id']))
+                    print(f"[Update Stock In] Spec ID {item['spec_id']} stock increased by {item['quantity']}")
             
             connection.commit()
             return jsonify({
@@ -1157,8 +1266,25 @@ def delete_stock_in(stock_in_id):
                     'message': '入库记录不存在'
                 }), 404
             
+            # 🔧 关键修复：先获取入库明细，用于更新库存
+            cursor.execute("""
+                SELECT spec_specID, quantity 
+                FROM stock_in_detail 
+                WHERE stock_inID = %s
+            """, (stock_in_id,))
+            details = cursor.fetchall()
+            
             # 删除入库明细
             cursor.execute("DELETE FROM stock_in_detail WHERE stock_inID = %s", (stock_in_id,))
+            
+                # Decrease stock for deleted items
+            for detail in details:
+                cursor.execute("""
+                    UPDATE spec 
+                    SET total_stock = COALESCE(total_stock, 0) - %s 
+                    WHERE specID = %s
+                """, (detail['quantity'], detail['spec_specID']))
+                print(f"[Delete Stock In] Spec ID {detail['spec_specID']} stock decreased by {detail['quantity']}")
             
             # 删除入库记录
             cursor.execute("DELETE FROM stock_in WHERE stock_inID = %s", (stock_in_id,))

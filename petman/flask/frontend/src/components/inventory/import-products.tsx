@@ -90,7 +90,7 @@ export function ImportProducts() {
           spec_value: rowData[6] || '', // 规格值
           barcode: rowData[7] || '', // 条形码
           picture: rowData[8] || '', // 图片路径
-          '总库存': rowData[9] || 0, // 库存数量
+          'total_stock': rowData[9] || 0,
           product_baozhiqi: rowData[10] || 12, // 保质期
           local: rowData[11] || '', // 产地
           product_details: rowData[12] || '', // 商品详情

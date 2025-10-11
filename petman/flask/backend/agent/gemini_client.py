@@ -76,7 +76,7 @@ class GeminiClient:
             safety_settings=self.safety_settings
         )
         
-    def analyze_product_image(self, image_data: bytes, additional_context: str = "") -> Dict[str, Any]:
+    def analyze_product_image(self, image_data: bytes, additional_context: str = "", system_context: str = "") -> Dict[str, Any]:
         """
         Analyze product image to extract information
         
@@ -94,7 +94,7 @@ class GeminiClient:
             image = Image.open(io.BytesIO(image_data))
             print(f"[Gemini] 图片尺寸: {image.size}, 格式: {image.format}")
             
-            prompt = self._build_image_analysis_prompt(additional_context)
+            prompt = self._build_image_analysis_prompt(additional_context, system_context)
             
             print("[Gemini] 正在调用 Gemini API...")
             # 按照官方文档推荐的方式传递内容
@@ -117,7 +117,7 @@ class GeminiClient:
                 'error': str(e)
             }
     
-    def extract_product_info_from_text(self, text: str) -> Dict[str, Any]:
+    def extract_product_info_from_text(self, text: str, system_context: str = "") -> Dict[str, Any]:
         """
         Extract structured product information from natural language text
         
@@ -130,7 +130,7 @@ class GeminiClient:
         try:
             print(f"[Gemini] 开始从文本提取，长度: {len(text)} 字符")
             
-            prompt = self._build_text_extraction_prompt(text)
+            prompt = self._build_text_extraction_prompt(text, system_context)
             
             print("[Gemini] 正在调用 Gemini API...")
             response = self.text_model.generate_content(prompt)
@@ -218,7 +218,7 @@ class GeminiClient:
                 'error': str(e)
             }
     
-    def process_mixed_input(self, text: str, images: List[bytes], audio: Optional[bytes] = None) -> Dict[str, Any]:
+    def process_mixed_input(self, text: str, images: List[bytes], audio: Optional[bytes] = None, system_context: str = "") -> Dict[str, Any]:
         """
         Process text, images, and audio together for product information extraction
         
@@ -237,7 +237,7 @@ class GeminiClient:
             if audio and not text and not images:
                 return self.process_audio(audio)
             
-            prompt = self._build_mixed_input_prompt(text)
+            prompt = self._build_mixed_input_prompt(text, system_context)
             
             # Prepare content list
             content = [prompt]
@@ -275,18 +275,20 @@ class GeminiClient:
                 'error': str(e)
             }
     
-    def _build_image_analysis_prompt(self, additional_context: str = "") -> str:
+    def _build_image_analysis_prompt(self, additional_context: str = "", system_context: str = "") -> str:
         """Build prompt for image analysis"""
-        base_prompt = """
+        base_prompt = system_context if system_context else ""
+        
+        base_prompt += """
 请仔细分析这张宠物商品图片，提取以下信息：
 
 必填信息（尽量提取）：
 1. 商品名称 - 完整的产品名称
-2. 品牌 - 品牌名称，如果不可见请填写"未知品牌"
+2. 品牌 - 从上述品牌列表中选择最匹配的（如果有系统品牌列表）
 3. 规格/型号 - 如"500g"、"1kg"、"M号"等
 
 可选信息（如果图片中可见）：
-4. 产品类别 - 从以下选择：食品、零食、主粮、罐头、玩具、用品、清洁、医疗、美容、服装、其他
+4. 产品类别 - 从上述分类列表中选择最匹配的（优先三级分类）
 5. 适用动物 - 狗、猫、兔、鸟、鱼、仓鼠或通用
 6. 条形码 - 如果图片中可见完整条形码，请提取数字
 7. 保质期 - 如果可见，以月为单位的数字（例如：18个月请填写18）
@@ -296,9 +298,11 @@ class GeminiClient:
 请严格按照以下JSON格式返回（不要添加任何额外文字）：
 {
     "product_name": "商品名称",
-    "brand": "品牌名称",
+    "brand": "品牌名称（原始名称）",
+    "brand_id": 123,
     "specification": "规格",
-    "category": "类别",
+    "category": "类别名称（原始名称）",
+    "classify_id": 456,
     "target_animal": "适用动物",
     "barcode": "条形码数字",
     "shelf_life": 18,
@@ -307,8 +311,9 @@ class GeminiClient:
 }
 
 重要：
-- 如果某信息不可见，请设为null（不是字符串"null"）
-- brand字段必填，如不可见请填"未知品牌"
+- brand_id：从系统品牌列表中选择最匹配的ID，找不到则为null
+- classify_id：优先选择三级分类ID，其次二级，最后一级，找不到则为null
+- brand和category：必须保留原始识别的名称
 - shelf_life必须是数字（月数）或null
 - 只返回JSON，不要有其他解释文字
 """
@@ -317,9 +322,11 @@ class GeminiClient:
         
         return base_prompt
     
-    def _build_text_extraction_prompt(self, text: str) -> str:
+    def _build_text_extraction_prompt(self, text: str, system_context: str = "") -> str:
         """Build prompt for text extraction"""
-        return f"""
+        prompt = system_context if system_context else ""
+        
+        prompt += f"""
 请从以下描述中提取宠物商品信息：
 
 描述：{text}
@@ -327,9 +334,11 @@ class GeminiClient:
 请严格按照以下JSON格式返回（不要添加任何额外文字）：
 {{
     "product_name": "商品名称",
-    "brand": "品牌名称",
+    "brand": "品牌名称（原始名称）",
+    "brand_id": 123,
     "specification": "规格",
-    "category": "类别",
+    "category": "类别名称（原始名称）",
+    "classify_id": 456,
     "target_animal": "适用动物",
     "barcode": "条形码",
     "shelf_life": 18,
@@ -339,16 +348,21 @@ class GeminiClient:
 }}
 
 重要：
-- brand必填，如未提及请填"未知品牌"
+- brand_id：从系统品牌列表中选择最匹配的ID，找不到则为null
+- classify_id：优先选择三级分类ID，其次二级，最后一级，找不到则为null
+- brand和category：必须保留原始识别的名称
 - shelf_life必须是数字（月数）或null
 - unit_price必须是数字或null
 - 如果某些信息未提及，请设置为null（不是字符串"null"）
 - 只返回JSON，不要有其他解释文字
 """
+        return prompt
     
-    def _build_mixed_input_prompt(self, text: str) -> str:
+    def _build_mixed_input_prompt(self, text: str, system_context: str = "") -> str:
         """Build prompt for mixed text and image input"""
-        prompt = """
+        prompt = system_context if system_context else ""
+        
+        prompt += """
 请综合分析提供的文字描述和图片，提取完整的宠物商品信息：
 """
         if text:
@@ -358,9 +372,11 @@ class GeminiClient:
 请严格按照以下JSON格式返回（不要添加任何额外文字）：
 {
     "product_name": "商品名称",
-    "brand": "品牌名称",
+    "brand": "品牌名称（原始名称）",
+    "brand_id": 123,
     "specification": "规格",
-    "category": "类别",
+    "category": "类别名称（原始名称）",
+    "classify_id": 456,
     "target_animal": "适用动物",
     "barcode": "条形码数字",
     "shelf_life": 18,
@@ -372,7 +388,9 @@ class GeminiClient:
 
 重要：
 - 请优先使用图片中的信息，文字描述作为补充
-- brand必填，如不可见请填"未知品牌"
+- brand_id：从系统品牌列表中选择最匹配的ID，找不到则为null
+- classify_id：优先选择三级分类ID，其次二级，最后一级，找不到则为null
+- brand和category：必须保留原始识别的名称
 - shelf_life必须是数字（月数）或null
 - quantity必须是数字或null，默认为1
 - unit_price必须是数字或null

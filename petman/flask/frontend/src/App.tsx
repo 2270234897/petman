@@ -18,6 +18,7 @@ import { ImportPage } from "@/pages/inventory/import"
 import { QuickImport } from "@/pages/quick-import"
 import { ImageRecognitionPage } from "@/pages/image-recognition"
 import AgentAssistant from "@/pages/agent-assistant"
+import { SmartSearch } from "@/pages/smart-search"
 import { Toaster } from "sonner"
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
             <Route path="/quick-import" element={<QuickImport />} />
             <Route path="/image-recognition" element={<ImageRecognitionPage />} />
             <Route path="/agent-assistant" element={<AgentAssistant />} />
+            <Route path="/smart-search" element={<SmartSearch />} />
           </Route>
         </Routes>
       </BrowserRouter>

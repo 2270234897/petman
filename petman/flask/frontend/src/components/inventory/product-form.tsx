@@ -77,24 +77,57 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
-      product_name: initialData?.product_name || "",
-      brand_id: initialData?.brand_id || initialData?.brand_brandID || undefined,
-      classify_id: initialData?.classify_id || initialData?.classify_level1_classify1_ID || undefined,
-      product_baozhiqi: initialData?.product_baozhiqi ?? undefined,
-      product_details: initialData?.product_details || initialData?.local || "",
-      cover_image: initialData?.cover_image || "",
+      product_name: "",
+      brand_id: undefined,
+      classify_id: undefined,
+      product_baozhiqi: undefined,
+      product_details: "",
+      cover_image: "",
     },
   })
+  
+  // 当initialData变化时，重置表单值
+  useEffect(() => {
+    if (initialData) {
+      console.log('[ProductForm] 接收到初始数据:', initialData);
+      
+      // 重置表单值（使用 ?? 而不是 || 以支持0值）
+      form.reset({
+        product_name: initialData.product_name || "",
+        brand_id: initialData.brand_id ?? initialData.brand_brandID ?? undefined,
+        classify_id: initialData.classify_id ?? initialData.classify_level1_classify1_ID ?? undefined,
+        product_baozhiqi: initialData.product_baozhiqi ?? undefined,
+        product_details: initialData.product_details || initialData.local || "",
+        cover_image: initialData.cover_image || "",
+      });
+      
+      console.log('[ProductForm] ✅ 表单已重置，品牌ID:', initialData.brand_id ?? initialData.brand_brandID, '分类ID:', initialData.classify_id ?? initialData.classify_level1_classify1_ID);
+      
+      // 显示AI识别的提示（使用严格检查null/undefined）
+      if (initialData._aiData) {
+        const aiData = initialData._aiData;
+        console.log('[ProductForm] AI识别数据:', aiData);
+        
+        if (aiData.brand && (initialData.brand_id === null || initialData.brand_id === undefined)) {
+          toast.info(`AI识别的品牌"${aiData.brand}"未找到，请手动选择`);
+        }
+        if (aiData.category && (initialData.classify_id === null || initialData.classify_id === undefined)) {
+          toast.info(`AI识别的分类"${aiData.category}"未找到，请手动选择`);
+        }
+      }
+    }
+  }, [initialData, form])
   
   // 初始化规格数据
   useEffect(() => {
     if (initialData?.specs) {
+      console.log('[ProductForm] 初始化规格数据:', initialData.specs);
       setSpecs(initialData.specs.map((spec: any) => ({
         id: spec.specID || spec.id || Date.now() + Math.random(),
         spec_type_id: spec.spec_type_id,
         name: spec.spec_name || spec.name || "",
         value: spec.spec_value || spec.value || "",
-        stock: spec.总库存 || spec.spec_stock || spec.stock || 0,
+        stock: spec.total_stock || spec.spec_stock || spec.stock || 0,
         barcode: spec.barcode || "",
         picture: spec.picture || "",
         unit: spec.spec_unit || spec.unit || ""
@@ -229,7 +262,7 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
         spec_value: spec.value || '',
         barcode: spec.barcode || '',
         picture: spec.picture || '',
-        总库存: spec.stock || 0,
+        total_stock: spec.stock || 0,
         unit: spec.unit || ''
       }))
     }
@@ -310,13 +343,23 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>品牌</FormLabel>
+                  <FormLabel>
+                    品牌
+                    {initialData?._aiData?.brand && (
+                      <span className="ml-2 text-xs text-blue-600">
+                        (AI识别: {initialData._aiData.brand})
+                      </span>
+                    )}
+                  </FormLabel>
                   <Select 
-                    onValueChange={(value) => field.onChange(Number(value))}
+                    onValueChange={(value) => {
+                      console.log('[品牌选择] 选中值:', value);
+                      field.onChange(Number(value));
+                    }}
                     value={field.value ? field.value.toString() : ""}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className={field.value ? "border-green-500" : ""}>
                         <SelectValue placeholder="请选择品牌" />
                       </SelectTrigger>
                     </FormControl>
@@ -328,12 +371,17 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
                             key={brand.brandID} 
                             value={brand.brandID.toString()}
                           >
-                            {brand.brandname}
+                            {brand.brandname || brand.brandName}
                           </SelectItem>
                         )
                       )}
                     </SelectContent>
                   </Select>
+                  {field.value && (
+                    <FormDescription className="text-green-600 text-xs">
+                      ✓ 已选择
+                    </FormDescription>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -344,18 +392,30 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>分类</FormLabel>
+                  <FormLabel>
+                    分类
+                    {initialData?._aiData?.category && (
+                      <span className="ml-2 text-xs text-blue-600">
+                        (AI识别: {initialData._aiData.category})
+                      </span>
+                    )}
+                  </FormLabel>
                   <FormControl>
                     <SimpleTreeSelect
                       categories={availableCategories}
                       value={field.value}
                       onValueChange={(value) => {
-                        console.log('ProductForm - onValueChange:', value) // 调试信息
-                        field.onChange(value)
+                        console.log('[分类选择] 选中值:', value);
+                        field.onChange(value);
                       }}
                       placeholder="请选择分类"
                     />
                   </FormControl>
+                  {field.value && (
+                    <FormDescription className="text-green-600 text-xs">
+                      ✓ 已选择
+                    </FormDescription>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -366,13 +426,21 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>保质期 (月) <span className="text-gray-500 text-sm">(可选)</span></FormLabel>
+                  <FormLabel>
+                    保质期 (月) <span className="text-gray-500 text-sm">(可选)</span>
+                    {initialData?._aiData?.shelf_life && (
+                      <span className="ml-2 text-xs text-blue-600">
+                        (AI识别: {initialData._aiData.shelf_life}个月)
+                      </span>
+                    )}
+                  </FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
                       min="1" 
                       max="120" 
-                      placeholder="请输入保质期，如无保质期可留空" 
+                      placeholder="请输入保质期，如无保质期可留空"
+                      className={field.value ? "border-green-500" : ""}
                       value={field.value === undefined ? "" : field.value}
                       onChange={(e) => {
                         const value = e.target.value

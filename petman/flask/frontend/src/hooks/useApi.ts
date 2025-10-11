@@ -18,7 +18,7 @@ export const useDashboardStats = () => {
       const activeCustomers = customers.data?.length ?? 0
       const todayStr = new Date().toISOString().slice(0, 10)
       const todayAppointments = (appointments.data ?? []).filter((a: any) => (a.appointment_date ?? '').startsWith(todayStr)).length
-      const lowStockItems = (products.data ?? []).filter((p: any) => (p.总库存 ?? p.currentStock ?? 0) < (p.minStock ?? 10)).length
+      const lowStockItems = (products.data ?? []).filter((p: any) => (p.total_stock ?? p.currentStock ?? 0) < (p.minStock ?? 10)).length
 
       return { totalPets, activeCustomers, todayAppointments, lowStockItems }
     },

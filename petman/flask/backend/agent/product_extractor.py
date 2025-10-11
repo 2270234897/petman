@@ -80,15 +80,19 @@ class ProductExtractor:
         normalized = {
             'product_name': self._clean_string(data.get('product_name')),
             'brand': self._clean_string(data.get('brand')),
+            'brand_id': self._parse_number(data.get('brand_id'), default=None) if data.get('brand_id') else None,
             'specification': self._clean_string(data.get('specification')),
-            'category': self._map_category(data.get('category')),
+            'category': self._clean_string(data.get('category')),  # 保留原始分类名
+            'classify_id': self._parse_number(data.get('classify_id'), default=None) if data.get('classify_id') else None,
             'quantity': self._parse_number(data.get('quantity'), default=1),
             'unit_price': self._parse_price(data.get('unit_price')),
             'supplier': self._clean_string(data.get('supplier')),
-            'target_animal': self._map_animal(data.get('target_animal')),
+            'target_animal': self._clean_string(data.get('target_animal')),
             'features': self._extract_features(data.get('features')),
             'barcode': self._clean_string(data.get('barcode')),
             'notes': self._clean_string(data.get('notes')),
+            'shelf_life': self._parse_shelf_life(data.get('shelf_life')),
+            'origin': self._clean_string(data.get('origin')),
             'extraction_time': datetime.now().isoformat()
         }
         
@@ -199,6 +203,42 @@ class ProductExtractor:
             return ', '.join(str(f).strip() for f in features if f)
         else:
             return str(features).strip()
+    
+    def _parse_shelf_life(self, value: Any) -> Optional[int]:
+        """Parse shelf life (in months) from various formats"""
+        if value is None or value == 'null' or value == '':
+            return None
+        
+        try:
+            # 如果已经是数字，直接返回（假定为月数）
+            if isinstance(value, (int, float)):
+                return int(value)
+            
+            # 字符串处理
+            value_str = str(value).lower().strip()
+            
+            # 处理年份（转换为月）
+            if '年' in value_str or 'year' in value_str:
+                value_str = value_str.replace('年', '').replace('years', '').replace('year', '').strip()
+                years = float(re.sub(r'[^\d.]', '', value_str))
+                return int(years * 12)  # 1年 = 12个月
+            
+            # 处理天数（转换为月）
+            if '天' in value_str or '日' in value_str or 'day' in value_str:
+                value_str = value_str.replace('天', '').replace('日', '').replace('days', '').replace('day', '').strip()
+                days = float(re.sub(r'[^\d.]', '', value_str))
+                return int(days / 30)  # 约30天为1个月
+            
+            # 处理月份
+            if '月' in value_str or 'month' in value_str:
+                value_str = value_str.replace('月', '').replace('个月', '').replace('months', '').replace('month', '').strip()
+            
+            # 提取纯数字（默认为月）
+            cleaned = re.sub(r'[^\d.]', '', value_str)
+            return int(float(cleaned)) if cleaned else None
+        except Exception as e:
+            print(f"Error parsing shelf life '{value}': {e}")
+            return None
     
     def validate_product_data(self, data: Dict[str, Any]) -> tuple[bool, List[str]]:
         """
