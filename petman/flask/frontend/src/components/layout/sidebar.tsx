@@ -39,7 +39,7 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <div
       className={cn(
-        "flex h-full flex-col border-r transition-all duration-300 sidebar-gradient",
+        "hidden md:flex h-full flex-col border-r transition-all duration-300 sidebar-gradient",
         isCollapsed ? "w-16" : "w-64",
         className
       )}

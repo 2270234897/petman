@@ -3,6 +3,8 @@ import { Heart, Users, Calendar, Package, TrendingUp, AlertTriangle, Loader2 } f
 import { useDashboardStats, useDashboardActivities } from "@/hooks/useApi"
 import { toast } from "sonner"
 import { useNavigate } from "react-router-dom"
+import { useMobile } from "@/hooks/useMobile"
+import { MobileDashboard } from "./mobile-dashboard"
 
 const statsConfig = [
   {
@@ -40,9 +42,15 @@ const statsConfig = [
 ]
 
 export function Dashboard() {
+  const isMobile = useMobile()
   const { data: stats, isLoading: statsLoading } = useDashboardStats()
   const { data: activities, isLoading: activitiesLoading } = useDashboardActivities()
   const navigate = useNavigate()
+
+  // Use mobile-optimized dashboard for mobile devices
+  if (isMobile) {
+    return <MobileDashboard />
+  }
 
   // 处理快速操作按钮点击
   const handleQuickAction = (action: string) => {

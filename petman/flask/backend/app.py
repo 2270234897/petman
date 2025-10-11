@@ -17,8 +17,15 @@ app = Flask(__name__,
     static_folder='static'
     )
 
-# Enable CORS for frontend
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+# Enable CORS for frontend (allow all origins for mobile access)
+CORS(app, 
+     resources={r"/api/*": {
+         "origins": "*",
+         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         "allow_headers": ["Content-Type", "Authorization"],
+         "expose_headers": ["Content-Type"],
+         "supports_credentials": True
+     }})
 
 # Register blueprints
 app.register_blueprint(pets_bp)

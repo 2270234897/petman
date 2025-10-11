@@ -11,12 +11,24 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    strictPort: true
+    strictPort: true,
+    host: true, // Allow access from network for mobile testing
   },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true
+    sourcemap: true,
+    // PWA optimization
+    manifest: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'query-vendor': ['@tanstack/react-query'],
+          'ui-vendor': ['lucide-react', 'sonner'],
+        }
+      }
+    }
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom']

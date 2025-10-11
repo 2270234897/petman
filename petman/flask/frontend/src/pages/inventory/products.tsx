@@ -26,8 +26,99 @@ import {
 } from "@/hooks/useApi"
 import { toast } from "sonner"
 import { ProductForm } from "@/components/inventory/product-form"
+import { useMobile } from "@/hooks/useMobile"
+
+// 移动端商品卡片组件
+function MobileProductCard({ product, onEdit, onDelete }: any) {
+  const [expanded, setExpanded] = useState(false)
+  
+  return (
+    <Card className="overflow-hidden active:scale-[0.98] transition-transform">
+      <CardContent className="p-4">
+        <div className="flex items-start space-x-3">
+          {/* 商品图片 */}
+          <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg flex items-center justify-center">
+            {product.picture ? (
+              <img src={product.picture} alt={product.product_name} className="w-full h-full object-cover rounded-lg" />
+            ) : (
+              <Package className="h-8 w-8 text-blue-500" />
+            )}
+          </div>
+          
+          {/* 商品信息 */}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-base truncate">{product.product_name}</h3>
+            <div className="flex items-center space-x-2 mt-1">
+              <Badge variant="outline" className="text-xs">{product.brandname}</Badge>
+              <span className="text-xs text-muted-foreground truncate">{product.classify_name}</span>
+            </div>
+            
+            {/* 规格数量 */}
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-sm text-muted-foreground">
+                {product.specs?.length || 0} 个规格
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setExpanded(!expanded)}
+                className="h-6 text-xs"
+              >
+                {expanded ? <EyeOff className="h-3 w-3 mr-1" /> : <Eye className="h-3 w-3 mr-1" />}
+                {expanded ? "收起" : "展开"}
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        {/* 展开的规格信息 */}
+        {expanded && product.specs && product.specs.length > 0 && (
+          <div className="mt-3 pt-3 border-t space-y-2">
+            {product.specs.map((spec: any, idx: number) => (
+              <div key={idx} className="flex items-center justify-between bg-accent/50 rounded-lg p-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{spec.spec_name}</p>
+                  <p className="text-xs text-muted-foreground">{spec.spec_value}</p>
+                </div>
+                <div className="text-right ml-2">
+                  <p className="text-sm font-semibold">库存: {spec.total_stock || 0}</p>
+                  {spec.barcode && (
+                    <p className="text-xs text-muted-foreground">{spec.barcode}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* 操作按钮 */}
+        <div className="flex space-x-2 mt-3 pt-3 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEdit(product)}
+            className="flex-1"
+          >
+            <Edit className="h-3 w-3 mr-1" />
+            编辑
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onDelete(product.productID, product.product_name)}
+            className="flex-1 text-red-600 hover:text-red-700"
+          >
+            <Trash2 className="h-3 w-3 mr-1" />
+            删除
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export function InventoryProducts() {
+  const isMobile = useMobile()
   const [searchTerm, setSearchTerm] = useState("")
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState<any>(null)
@@ -229,7 +320,19 @@ export function InventoryProducts() {
             <>
               {filteredInventory.length > 0 ? (
                 <div className="space-y-4">
-                  {filteredInventory.map((item: any) => {
+                  {/* 移动端：使用卡片布局 */}
+                  {isMobile ? (
+                    filteredInventory.map((item: any) => (
+                      <MobileProductCard
+                        key={item.productID}
+                        product={item}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                      />
+                    ))
+                  ) : (
+                    // 桌面端：使用原有布局
+                    filteredInventory.map((item: any) => {
                     const isExpanded = expandedProducts.has(item.productID)
                     const coverImage = getProductCoverImage(item)
                     const totalStock = item.specs?.reduce((sum: number, spec: any) => sum + (spec.total_stock || 0), 0) || 0
@@ -395,7 +498,8 @@ export function InventoryProducts() {
                         </CardContent>
                       </Card>
                     )
-                  })}
+                  })
+                  )}
                 </div>
               ) : (
                 <Card className="border border-gray-200 shadow-sm">

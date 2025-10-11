@@ -1,0 +1,237 @@
+/* Mobile-specific styles */
+
+/* Safe area insets for devices with notches */
+.safe-area-top {
+  padding-top: max(env(safe-area-inset-top), 1rem);
+}
+
+.safe-area-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+}
+
+.safe-area-left {
+  padding-left: max(env(safe-area-inset-left), 1rem);
+}
+
+.safe-area-right {
+  padding-right: max(env(safe-area-inset-right), 1rem);
+}
+
+/* Touch optimization */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Disable text selection on interactive elements */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scrolling */
+.smooth-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Mobile card hover effect */
+.mobile-card-press {
+  transition: transform 0.1s ease;
+}
+
+.mobile-card-press:active {
+  transform: scale(0.98);
+}
+
+/* Bottom sheet overlay */
+.bottom-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  animation: fade-in 0.2s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 1rem 1rem 0 0;
+  z-index: 51;
+  animation: slide-up 0.3s ease-out;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Mobile input styles */
+@media (max-width: 768px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+}
+
+/* Mobile table styles */
+.mobile-table {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.mobile-table-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Swipe actions */
+.swipe-action-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-action-content {
+  transition: transform 0.3s ease;
+}
+
+.swipe-action-buttons {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* Pull to refresh animation */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pull-refresh-icon {
+  animation: rotate 1s linear infinite;
+}
+
+/* Mobile navigation animation */
+.mobile-nav-item {
+  transition: all 0.2s ease;
+}
+
+.mobile-nav-item.active {
+  transform: scale(1.1);
+}
+
+/* Ripple effect */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.ripple:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* Mobile modal */
+.mobile-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: white;
+  overflow-y: auto;
+  animation: slide-in-right 0.3s ease-out;
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Loading skeleton */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Mobile toast position */
+@media (max-width: 768px) {
+  [data-sonner-toaster] {
+    bottom: 5rem !important;
+  }
+}
+
+
+

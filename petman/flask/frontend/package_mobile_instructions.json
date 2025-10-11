@@ -1,0 +1,28 @@
+{
+  "移动端配置说明": {
+    "已安装依赖": [
+      "react",
+      "react-dom", 
+      "react-router-dom",
+      "@tanstack/react-query",
+      "lucide-react",
+      "tailwindcss"
+    ],
+    "无需额外安装": "所有移动端功能使用现有依赖实现",
+    "PWA功能": "使用浏览器原生API，无需额外依赖",
+    "图标生成": {
+      "需要安装": "npm install sharp --save-dev",
+      "使用方法": "node scripts/generate-icons.js",
+      "注意": "仅用于生成图标，非运行时依赖"
+    }
+  },
+  "启动说明": {
+    "开发模式": "npm run dev",
+    "移动端测试": "在浏览器中访问 http://localhost:5173 并开启设备模拟",
+    "局域网测试": "npm run dev 会自动启用网络访问，手机访问 http://你的IP:5173",
+    "生产构建": "npm run build"
+  }
+}
+
+
+
