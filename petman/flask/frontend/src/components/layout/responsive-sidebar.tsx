@@ -39,9 +39,10 @@ const inventoryItems = [
 
 const toolItems = [
   { icon: Upload, label: "快速导入", path: "/quick-import" },
-  { icon: Camera, label: "图像识别", path: "/image-recognition" },
-  { icon: Search, label: "智能搜索", path: "/smart-search" },
-  { icon: Sparkles, label: "AI助手", path: "/agent-assistant" },
+  // AI tools disabled - moved to archive
+  // { icon: Camera, label: "图像识别", path: "/image-recognition" },
+  // { icon: Search, label: "智能搜索", path: "/smart-search" },
+  // { icon: Sparkles, label: "AI助手", path: "/agent-assistant" },
 ];
 
 export function ResponsiveSidebar({ className, onNavigate }: SidebarProps) {
@@ -118,6 +119,10 @@ export function ResponsiveSidebar({ className, onNavigate }: SidebarProps) {
     </div>
   );
 }
+
+
+
+
 
 
 

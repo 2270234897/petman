@@ -2,31 +2,35 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Package, Tag, ArrowDownToLine, Copyright, Truck, Upload, Settings } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { useMobile } from "@/hooks/useMobile"
 
 export function Inventory() {
   const navigate = useNavigate()
+  const isMobile = useMobile()
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex justify-between items-center">
+      <div className={isMobile ? "space-y-3" : "flex justify-between items-center"}>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">库存管理</h1>
-          <p className="text-muted-foreground">
+          <h1 className={isMobile ? "text-2xl font-bold tracking-tight" : "text-3xl font-bold tracking-tight"}>库存管理</h1>
+          <p className="text-muted-foreground text-sm">
             管理宠物用品和药品库存
           </p>
         </div>
-        <Button 
-          className="btn-vibrant-teal"
-          onClick={() => navigate("/inventory/import")}
-        >
-          <Upload className="mr-2 h-4 w-4" />
-          批量导入
-        </Button>
+        {!isMobile && (
+          <Button 
+            className="btn-vibrant-teal"
+            onClick={() => navigate("/inventory/import")}
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            批量导入
+          </Button>
+        )}
       </div>
 
       {/* 主要功能区域 - 突出显示 */}
-      <div className="grid gap-6 md:grid-cols-2 mb-8">
+      <div className={isMobile ? "space-y-3" : "grid gap-6 md:grid-cols-2 mb-8"}>
         {/* 商品及规格管理 - 主要功能 */}
         <Card 
           className="vibrant-card-blue border-3 cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-br from-blue-50 to-blue-100"

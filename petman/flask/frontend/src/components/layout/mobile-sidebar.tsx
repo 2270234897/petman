@@ -23,9 +23,10 @@ const menuSections = [
     title: "快捷工具",
     items: [
       { icon: Upload, label: "快速导入", path: "/quick-import" },
-      { icon: Camera, label: "图像识别", path: "/image-recognition" },
-      { icon: SearchIcon, label: "智能搜索", path: "/smart-search" },
-      { icon: Zap, label: "AI助手", path: "/agent-assistant" },
+      // AI tools disabled - moved to archive
+      // { icon: Camera, label: "图像识别", path: "/image-recognition" },
+      // { icon: SearchIcon, label: "智能搜索", path: "/smart-search" },
+      // { icon: Zap, label: "AI助手", path: "/agent-assistant" },
     ],
   },
 ];
@@ -90,6 +91,10 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
     </>
   );
 }
+
+
+
+
 
 
 

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,13 +29,22 @@ import { ProductForm } from "@/components/inventory/product-form"
 import { useMobile } from "@/hooks/useMobile"
 
 // 移动端商品卡片组件
-function MobileProductCard({ product, onEdit, onDelete }: any) {
+function MobileProductCard({ product, onEdit, onDelete, selected, onToggleSelect }: any) {
   const [expanded, setExpanded] = useState(false)
   
   return (
     <Card className="overflow-hidden active:scale-[0.98] transition-transform">
       <CardContent className="p-4">
         <div className="flex items-start space-x-3">
+          {/* 选择复选框 */}
+          <div className="pt-1">
+            <input 
+              type="checkbox" 
+              className="rounded"
+              checked={!!selected}
+              onChange={() => onToggleSelect(product.productID)}
+            />
+          </div>
           {/* 商品图片 */}
           <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg flex items-center justify-center">
             {product.picture ? (
@@ -52,6 +61,15 @@ function MobileProductCard({ product, onEdit, onDelete }: any) {
               <Badge variant="outline" className="text-xs">{product.brandname}</Badge>
               <span className="text-xs text-muted-foreground truncate">{product.classify_name}</span>
             </div>
+            
+            {/* 货架位置 */}
+            {product.shelf && (
+              <div className="mt-1">
+                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                  货架: {product.shelf}
+                </span>
+              </div>
+            )}
             
             {/* 规格数量 */}
             <div className="flex items-center justify-between mt-2">
@@ -123,6 +141,7 @@ export function InventoryProducts() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState<any>(null)
   const [expandedProducts, setExpandedProducts] = useState<Set<number>>(new Set())
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const { data, isLoading, refetch } = useInventory()
   const { data: brandsData } = useBrands()
   const { data: classifyData } = useClassify()
@@ -131,6 +150,7 @@ export function InventoryProducts() {
   const { mutate: createProduct } = useCreateInventoryItem()
   const { mutate: updateProduct } = useUpdateProduct()
   const { mutate: deleteProduct } = useDeleteProduct()
+  const deleteProductMutation = useDeleteProduct()
   
   const inventoryItems = data?.data || []
   const brands = brandsData?.data || []
@@ -141,6 +161,59 @@ export function InventoryProducts() {
     item.brandname.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.classify_name.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  // 选择相关逻辑
+  const allFilteredIds = useMemo(() => new Set(filteredInventory.map((i: any) => i.productID)), [filteredInventory])
+  const isAllSelected = useMemo(() => {
+    if (allFilteredIds.size === 0) return false
+    for (const id of allFilteredIds) {
+      if (!selectedIds.has(id)) return false
+    }
+    return true
+  }, [allFilteredIds, selectedIds])
+
+  const toggleSelect = (id: number) => {
+    const next = new Set(selectedIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setSelectedIds(next)
+  }
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      // 只取消当前过滤集内的选择
+      const next = new Set(selectedIds)
+      for (const id of allFilteredIds) next.delete(id)
+      setSelectedIds(next)
+    } else {
+      const next = new Set(selectedIds)
+      for (const id of allFilteredIds) next.add(id)
+      setSelectedIds(next)
+    }
+  }
+
+  const clearSelection = () => setSelectedIds(new Set())
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return
+    if (!confirm(`确定要删除选中的 ${selectedIds.size} 个商品吗？此操作不可恢复。`)) return
+    try {
+      // 顺序或并发删除
+      const ids = Array.from(selectedIds)
+      for (const id of ids) {
+        // 使用 mutateAsync 以保证删除完成顺序与错误捕捉
+        // 如果后端允许，可以改为 Promise.all
+        // 这里使用第二个实例以获得 mutateAsync
+        // @ts-ignore
+        await deleteProductMutation.mutateAsync(id)
+      }
+      toast.success("批量删除完成！")
+      clearSelection()
+      refetch()
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "批量删除失败")
+    }
+  }
 
   const handleAddProduct = () => {
     setEditingProduct(null)
@@ -286,10 +359,10 @@ export function InventoryProducts() {
             </Button>
           </div>
 
-          {/* Search and Filter */}
+          {/* Search, Filter and Bulk Actions */}
           <Card className="border border-gray-200 shadow-sm">
             <CardContent className="pt-6">
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -299,11 +372,32 @@ export function InventoryProducts() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <Button variant="outline">
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      className="rounded"
+                      checked={isAllSelected}
+                      onChange={toggleSelectAll}
+                    />
+                    全选当前列表
+                  </label>
+                  <Button variant="outline">
                   <Filter className="mr-2 h-4 w-4" />
                   筛选
-                </Button>
+                  </Button>
+                </div>
               </div>
+
+              {selectedIds.size > 0 && (
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" className="text-xs">已选 {selectedIds.size} 项</Badge>
+                  <Button variant="destructive" onClick={handleBulkDelete} size="sm">
+                    <Trash2 className="h-4 w-4 mr-1" /> 批量删除
+                  </Button>
+                  <Button variant="outline" onClick={clearSelection} size="sm">取消选择</Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -326,6 +420,8 @@ export function InventoryProducts() {
                       <MobileProductCard
                         key={item.productID}
                         product={item}
+                        selected={selectedIds.has(item.productID)}
+                        onToggleSelect={toggleSelect}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
                       />
@@ -342,6 +438,15 @@ export function InventoryProducts() {
                         <CardContent className="p-6">
                           {/* 商品基本信息行 */}
                           <div className="flex items-center gap-4">
+                            {/* 选择复选框 */}
+                            <div>
+                              <input 
+                                type="checkbox" 
+                                className="rounded"
+                                checked={selectedIds.has(item.productID)}
+                                onChange={() => toggleSelect(item.productID)}
+                              />
+                            </div>
                             {/* 商品封面图 */}
                             <div className="flex-shrink-0">
                               {coverImage ? (
@@ -388,6 +493,9 @@ export function InventoryProducts() {
                                 <span>Stock: {totalStock}</span>
                                 {item.local && (
                                   <span className="text-gray-500">| {item.local}</span>
+                                )}
+                                {item.shelf && (
+                                  <span className="text-blue-600 font-medium">| 货架: {item.shelf}</span>
                                 )}
                               </div>
                             </div>

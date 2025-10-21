@@ -2,12 +2,72 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Users, Plus, Search, Filter, Phone, MoreHorizontal, Loader2 } from "lucide-react"
+import { Users, Plus, Search, Filter, Phone, MoreHorizontal, Loader2, Mail, MapPin } from "lucide-react"
 import { useCustomers } from "@/hooks/useApi"
 import { toast } from "sonner"
 import { CustomerForm } from "@/components/customers/customer-form"
+import { useMobile } from "@/hooks/useMobile"
+
+// 移动端客户卡片
+function MobileCustomerCard({ customer, onViewDetails, onEdit }: any) {
+  return (
+    <Card className="overflow-hidden active:scale-[0.98] transition-transform">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center space-x-2 mb-2">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold">
+                {customer.customername?.charAt(0) || '?'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-base truncate">{customer.customername || '未命名'}</h3>
+                <p className="text-xs text-muted-foreground">ID: {customer.customer_id}</p>
+              </div>
+            </div>
+            
+            <div className="space-y-2 mt-3">
+              {customer.telphone && (
+                <div className="flex items-center text-sm">
+                  <Phone className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" />
+                  <span className="truncate">{customer.telphone}</span>
+                </div>
+              )}
+              
+              {customer.address && (
+                <div className="flex items-start text-sm">
+                  <MapPin className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <span className="line-clamp-2 text-muted-foreground">{customer.address}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex space-x-2 mt-4 pt-3 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onViewDetails(customer.customer_id, customer.customername)}
+            className="flex-1"
+          >
+            查看
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEdit(customer.customer_id, customer.customername)}
+            className="flex-1"
+          >
+            编辑
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export function Customers() {
+  const isMobile = useMobile()
   const [searchTerm, setSearchTerm] = useState("")
   const [showCreateForm, setShowCreateForm] = useState(false)
   const { data, isLoading, refetch } = useCustomers()
@@ -105,8 +165,20 @@ export function Customers() {
           <span className="ml-2 text-muted-foreground">加载中...</span>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredCustomers.map((customer: any) => (
+        <div className={isMobile ? "space-y-3" : "grid gap-4 md:grid-cols-2 lg:grid-cols-3"}>
+          {isMobile ? (
+            // 移动端：使用卡片布局
+            filteredCustomers.map((customer: any) => (
+              <MobileCustomerCard
+                key={customer.customer_id}
+                customer={customer}
+                onViewDetails={handleViewDetails}
+                onEdit={handleEdit}
+              />
+            ))
+          ) : (
+            // 桌面端：使用网格布局
+            filteredCustomers.map((customer: any) => (
             <Card key={customer.customer_id} className="hover:shadow-md transition-shadow vibrant-card-purple border-2">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -157,7 +229,8 @@ export function Customers() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          ))
+          )}
         </div>
       )}
 

@@ -16,9 +16,10 @@ import { Brands } from "@/pages/inventory/brands"
 import { Dealers } from "@/pages/inventory/dealers"
 import { ImportPage } from "@/pages/inventory/import"
 import { QuickImport } from "@/pages/quick-import"
-import { ImageRecognitionPage } from "@/pages/image-recognition"
-import AgentAssistant from "@/pages/agent-assistant"
-import { SmartSearch } from "@/pages/smart-search"
+// AI pages disabled - moved to archive
+// import { ImageRecognitionPage } from "@/pages/image-recognition"
+// import AgentAssistant from "@/pages/agent-assistant"
+// import { SmartSearch } from "@/pages/smart-search"
 import { Toaster } from "sonner"
 
 function App() {
@@ -40,9 +41,10 @@ function App() {
             <Route path="/inventory/dealers" element={<Dealers />} />
             <Route path="/inventory/import" element={<ImportPage />} />
             <Route path="/quick-import" element={<QuickImport />} />
-            <Route path="/image-recognition" element={<ImageRecognitionPage />} />
-            <Route path="/agent-assistant" element={<AgentAssistant />} />
-            <Route path="/smart-search" element={<SmartSearch />} />
+            {/* AI routes disabled - moved to archive */}
+            {/* <Route path="/image-recognition" element={<ImageRecognitionPage />} /> */}
+            {/* <Route path="/agent-assistant" element={<AgentAssistant />} /> */}
+            {/* <Route path="/smart-search" element={<SmartSearch />} /> */}
           </Route>
         </Routes>
       </BrowserRouter>

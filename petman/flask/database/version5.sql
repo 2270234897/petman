@@ -1,7 +1,7 @@
--- MySQL Database Schema Version 5.0
+-- MySQL Database Schema Version 5.1
 -- Pet Store Management System Database
 -- 
--- Updated: 2025-10-10
+-- Updated: 2025-01-27
 -- 
 -- Main Improvements:
 -- 1. Picture fields expanded: VARCHAR(500) to LONGTEXT for base64 images
@@ -9,6 +9,8 @@
 -- 3. Barcode validation: Allow same barcode for different specs of same product
 -- 4. AI assistant integration: Optimized brand and category matching
 -- 5. Performance optimization: Added necessary indexes
+-- 6. Product shelf field: Added shelf location field for inventory management
+-- 7. Cover image fix: Fixed cover_image field in API queries
 --
 -- =====================================================
 
@@ -128,6 +130,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`product` (
   `brand_brandID` INT NOT NULL,
   `product_details` TEXT NULL,
   `cover_image` LONGTEXT NULL DEFAULT NULL,
+  `shelf` VARCHAR(100) NULL COMMENT '货架位置，用于存储商品存放位置',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`productID`),
@@ -135,6 +138,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`product` (
   INDEX `fk_product_brand1_idx` (`brand_brandID` ASC) VISIBLE,
   INDEX `idx_product_name` (`product_name` ASC) VISIBLE,
   INDEX `idx_product_created` (`created_at` ASC) VISIBLE,
+  INDEX `idx_product_shelf` (`shelf` ASC) VISIBLE,
   CONSTRAINT `fk_product_classify_level11`
     FOREIGN KEY (`classify_level1_classify1_ID`)
     REFERENCES `mydb`.`classify_level1` (`classify1_ID`)
@@ -549,7 +553,7 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 -- Version Info
 -- =====================================================
 
-SELECT 'Database Version 5.0 created successfully!' AS Status;
+SELECT 'Database Version 5.1 created successfully!' AS Status;
 SELECT 'Main updates:' AS Info;
 SELECT '1. Picture fields expanded to LONGTEXT (support base64 large images)' AS Update1;
 SELECT '2. Brand table with auto-increment and unique constraint' AS Update2;
@@ -558,3 +562,5 @@ SELECT '4. New product stock summary view' AS Update4;
 SELECT '5. New stock sync stored procedure' AS Update5;
 SELECT '6. Optimized foreign key constraints and cascade rules' AS Update6;
 SELECT '7. Complete sample data with 3-level categories' AS Update7;
+SELECT '8. Product shelf field added for inventory management' AS Update8;
+SELECT '9. Cover image field fix in API queries' AS Update9;

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 
 /**
  * Hook to detect if the device is mobile
+ * Enhanced with multiple detection methods
  * @param breakpoint - The breakpoint width in pixels (default: 768)
  * @returns boolean indicating if the device is mobile
  */
@@ -10,7 +11,32 @@ export function useMobile(breakpoint: number = 768): boolean {
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < breakpoint);
+      // Method 1: Check screen width
+      const widthCheck = window.innerWidth < breakpoint;
+      
+      // Method 2: Check User-Agent
+      const ua = navigator.userAgent.toLowerCase();
+      const uaCheck = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(ua);
+      
+      // Method 3: Check touch device
+      const touchCheck = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      
+      // Consider mobile if: width check passes OR (it's a mobile UA AND supports touch)
+      const result = widthCheck || (uaCheck && touchCheck);
+      
+      // Debug log (remove in production)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 Mobile Detection:', {
+          width: window.innerWidth,
+          widthCheck,
+          uaCheck,
+          touchCheck,
+          result,
+          ua: ua.substring(0, 60) + '...'
+        });
+      }
+      
+      setIsMobile(result);
     };
 
     // Check on mount

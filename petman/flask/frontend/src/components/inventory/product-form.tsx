@@ -26,7 +26,8 @@ import { useBrands, useClassify, useSpecTypes } from "@/hooks/useApi"
 import { toast } from "sonner"
 import { Controller } from "react-hook-form"
 import { Loader2, Sparkles } from "lucide-react"
-import { QuickEntryModal } from "@/components/agent/quick-entry-modal"
+// AI components disabled - moved to archive
+// import { QuickEntryModal } from "@/components/agent/quick-entry-modal"
 
 const productFormSchema = z.object({
   product_name: z.string().min(1, "商品名称不能为空"),
@@ -38,6 +39,7 @@ const productFormSchema = z.object({
   ]).optional(),
   product_details: z.string().optional(),
   cover_image: z.string().optional(),
+  shelf: z.string().optional(),
 })
 
 type ProductFormValues = z.infer<typeof productFormSchema>
@@ -61,7 +63,8 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
     picture?: string,
     unit?: string
   }>>([])
-  const [showAIAssistant, setShowAIAssistant] = useState(false)
+  // AI features disabled - moved to archive
+  // const [showAIAssistant, setShowAIAssistant] = useState(false)
   
   // 只有在没有从父组件传递数据时才自己获取数据
   const { data: brandsData, isLoading: isLoadingBrands, isError: isErrorBrands } = useBrands()
@@ -83,6 +86,7 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
       product_baozhiqi: undefined,
       product_details: "",
       cover_image: "",
+      shelf: "",
     },
   })
   
@@ -99,6 +103,7 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
         product_baozhiqi: initialData.product_baozhiqi ?? undefined,
         product_details: initialData.product_details || initialData.local || "",
         cover_image: initialData.cover_image || "",
+        shelf: initialData.shelf || "",
       });
       
       console.log('[ProductForm] ✅ 表单已重置，品牌ID:', initialData.brand_id ?? initialData.brand_brandID, '分类ID:', initialData.classify_id ?? initialData.classify_level1_classify1_ID);
@@ -178,53 +183,53 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
     setSpecs(specs.filter(spec => spec.id !== id))
   }
 
-  // 处理AI提取的数据
-  const handleAIDataExtracted = (aiData: any) => {
-    // 填充商品基本信息
-    if (aiData.product_name) {
-      form.setValue('product_name', aiData.product_name)
-    }
-    
-    if (aiData.brand_id !== undefined) {
-      form.setValue('brand_id', aiData.brand_id)
-    }
-    
-    if (aiData.classify_id !== undefined) {
-      form.setValue('classify_id', aiData.classify_id)
-    }
-    
-    if (aiData.product_baozhiqi !== undefined) {
-      form.setValue('product_baozhiqi', aiData.product_baozhiqi)
-    }
-    
-    if (aiData.product_details) {
-      form.setValue('product_details', aiData.product_details)
-    }
+  // AI features disabled - moved to archive
+  // const handleAIDataExtracted = (aiData: any) => {
+  //   // 填充商品基本信息
+  //   if (aiData.product_name) {
+  //     form.setValue('product_name', aiData.product_name)
+  //   }
+  //   
+  //   if (aiData.brand_id !== undefined) {
+  //     form.setValue('brand_id', aiData.brand_id)
+  //   }
+  //   
+  //   if (aiData.classify_id !== undefined) {
+  //     form.setValue('classify_id', aiData.classify_id)
+  //   }
+  //   
+  //   if (aiData.product_baozhiqi !== undefined) {
+  //     form.setValue('product_baozhiqi', aiData.product_baozhiqi)
+  //   }
+  //   
+  //   if (aiData.product_details) {
+  //     form.setValue('product_details', aiData.product_details)
+  //   }
 
-    // 处理规格信息
-    if (aiData.specs && aiData.specs.length > 0) {
-      setSpecs(aiData.specs)
-    }
+  //   // 处理规格信息
+  //   if (aiData.specs && aiData.specs.length > 0) {
+  //     setSpecs(aiData.specs)
+  //   }
 
-    // 显示未匹配的提示
-    if (aiData._aiExtracted) {
-      const warnings = []
-      
-      if (aiData._aiExtracted.brand && !aiData.brand_id) {
-        warnings.push(`品牌 "${aiData._aiExtracted.brand}" 未在系统中找到，请手动选择`)
-      }
-      
-      if (aiData._aiExtracted.category && !aiData.classify_id) {
-        warnings.push(`分类 "${aiData._aiExtracted.category}" 未在系统中找到，请手动选择`)
-      }
-      
-      if (warnings.length > 0) {
-        toast.warning(warnings.join('；'), { duration: 5000 })
-      }
-    }
+  //   // 显示未匹配的提示
+  //   if (aiData._aiExtracted) {
+  //     const warnings = []
+  //     
+  //     if (aiData._aiExtracted.brand && !aiData.brand_id) {
+  //       warnings.push(`品牌 "${aiData._aiExtracted.brand}" 未在系统中找到，请手动选择`)
+  //     }
+  //     
+  //     if (aiData._aiExtracted.category && !aiData.classify_id) {
+  //       warnings.push(`分类 "${aiData._aiExtracted.category}" 未在系统中找到，请手动选择`)
+  //     }
+  //     
+  //     if (warnings.length > 0) {
+  //       toast.warning(warnings.join('；'), { duration: 5000 })
+  //     }
+  //   }
 
-    setShowAIAssistant(false)
-  }
+  //   setShowAIAssistant(false)
+  // }
   
   // 提交表单
   const handleSubmit = (values: ProductFormValues) => {
@@ -256,6 +261,7 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
       local: values.product_details || '',
       brand_brandID: values.brand_id,
       cover_image: values.cover_image || '',
+      shelf: values.shelf || '',
       specs: specs.map(spec => ({
         spec_type_id: spec.spec_type_id || 1, // 确保有默认值
         spec_name: spec.name || '',
@@ -308,7 +314,8 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
             {initialData ? "编辑现有商品信息" : "添加新的商品及其规格信息"}
           </p>
         </div>
-        {!initialData && (
+        {/* AI features disabled - moved to archive */}
+        {/* {!initialData && (
           <Button
             type="button"
             onClick={() => setShowAIAssistant(true)}
@@ -317,7 +324,7 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
             <Sparkles className="mr-2 h-4 w-4" />
             AI 智能识别
           </Button>
-        )}
+        )} */}
       </div>
       
       <Form {...form}>
@@ -472,23 +479,45 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
             />
           </div>
           
-          <Controller
-            name="product_details"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>商品详情</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="请输入商品详情 (可选)" 
-                    className="resize-none" 
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Controller
+              name="shelf"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>货架位置 <span className="text-gray-500 text-sm">(可选)</span></FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="请输入货架位置，如：A区-1层-3号" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    用于记录商品在仓库中的存放位置，便于快速查找
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <Controller
+              name="product_details"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>商品详情</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="请输入商品详情 (可选)" 
+                      className="resize-none" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           
           <Controller
             name="cover_image"
@@ -665,8 +694,8 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
         </form>
       </Form>
 
-      {/* AI 助手弹窗 */}
-      {showAIAssistant && (
+      {/* AI 助手弹窗 - 已禁用 */}
+      {/* {showAIAssistant && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
@@ -679,7 +708,7 @@ export function ProductForm({ initialData, brands, categories, onSubmit, onCance
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   )
 }

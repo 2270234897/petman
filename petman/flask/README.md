@@ -1,6 +1,6 @@
 # 🐾 宠物店管理系统 (PetMan)
 
-一个现代化的宠物店综合管理系统，包含传统管理功能和 AI 智能助手。
+一个现代化的宠物店综合管理系统，专注于传统管理功能。
 
 ## ✨ 核心功能
 
@@ -10,23 +10,19 @@
 - **预约管理** - 美容、洗澡、寄养预约
 - **库存管理** - 商品进销存、供应商管理
 
-### 🤖 AI 智能助手（新功能）
+<!-- AI features disabled - moved to archive -->
+<!-- ### 🤖 AI 智能助手（已禁用）
 - **自然语言录入** - 用聊天的方式录入商品信息
 - **图片识别** - 上传商品照片自动提取信息
 - **🌐 智能搜索建商品** - AI联网搜索并自动创建商品实体 ✨NEW
 - **智能提取** - 自动识别品牌、规格、价格等字段
-- **数据验证** - 智能验证数据完整性
+- **数据验证** - 智能验证数据完整性 -->
 
 ## 🏗️ 项目结构
 
 ```
 petman/
 ├── backend/                    # 后端服务（Flask）
-│   ├── agent/                 # AI Agent 模块
-│   │   ├── gemini_client.py  # Gemini API 客户端
-│   │   ├── product_extractor.py  # 商品信息提取
-│   │   ├── image_processor.py     # 图片处理
-│   │   └── agent_routes.py   # Agent API 路由
 │   ├── app.py                # 主应用
 │   ├── pets.py               # 宠物管理
 │   ├── customers_py.py       # 客户管理
@@ -34,17 +30,18 @@ petman/
 │   ├── inventory_py.py       # 库存管理
 │   ├── static/               # 静态资源
 │   └── templates/            # HTML 模板
+│   └── archive/ai_modules_disabled/  # AI模块已移至归档
 │
 ├── frontend/                  # 前端应用（React + Vite）
 │   ├── src/
 │   │   ├── pages/           # 页面组件
-│   │   │   ├── agent-assistant.tsx  # AI 助手页面
 │   │   │   ├── dashboard.tsx
 │   │   │   ├── pets.tsx
 │   │   │   ├── customers.tsx
 │   │   │   ├── appointments.tsx
 │   │   │   └── inventory/
 │   │   ├── components/      # UI 组件
+│   │   └── archive/ai_modules_disabled/  # AI页面已移至归档
 │   │   │   ├── agent/       # Agent 相关组件
 │   │   │   ├── ui/          # 通用 UI 组件
 │   │   │   └── layout/      # 布局组件

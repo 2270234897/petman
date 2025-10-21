@@ -13,6 +13,16 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     host: true, // Allow access from network for mobile testing
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      '42983eef.r7.cpolar.cn', // Cpolar public domain
+      '.cpolar.cn' // Allow all cpolar subdomains
+    ],
+    // 性能优化
+    hmr: {
+      overlay: false // 禁用错误覆盖层以减少网络传输
+    }
   },
   build: {
     outDir: 'dist',

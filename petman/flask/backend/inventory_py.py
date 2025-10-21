@@ -285,7 +285,7 @@ def get_products():
             product_sql = """
             SELECT p.productID, p.product_name, p.classify_level1_classify1_ID, 
                    c.name AS classify_name, p.brand_brandID, b.brandname, 
-                   p.product_baozhiqi, p.local
+                   p.product_baozhiqi, p.local, p.shelf, p.cover_image
             FROM product p
             JOIN classify_level1 c ON p.classify_level1_classify1_ID = c.classify1_ID
             JOIN brand b ON p.brand_brandID = b.brandID
@@ -361,15 +361,16 @@ def add_product():
             
             # 插入产品数据
             sql = """
-            INSERT INTO product (product_name, classify_level1_classify1_ID, product_baozhiqi, local, brand_brandID)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO product (product_name, classify_level1_classify1_ID, product_baozhiqi, local, brand_brandID, shelf)
+            VALUES (%s, %s, %s, %s, %s, %s)
             """
             cursor.execute(sql, (
                 data['product_name'],
                 data['classify_level1_classify1_ID'],
                 data['product_baozhiqi'],
                 data.get('local', ''),  # 使用get方法提供默认值
-                data['brand_brandID']
+                data['brand_brandID'],
+                data.get('shelf', '')  # 使用get方法提供默认值
             ))
             
             product_id = cursor.lastrowid
@@ -467,7 +468,7 @@ def update_product(product_id):
         with connection.cursor() as cursor:
             sql = """
             UPDATE product SET product_name=%s, classify_level1_classify1_ID=%s, 
-                              product_baozhiqi=%s, local=%s, brand_brandID=%s
+                              product_baozhiqi=%s, local=%s, brand_brandID=%s, shelf=%s
             WHERE productID=%s
             """
             cursor.execute(sql, (
@@ -476,6 +477,7 @@ def update_product(product_id):
                 data['product_baozhiqi'],
                 data.get('local', ''),
                 data['brand_brandID'],
+                data.get('shelf', ''),
                 product_id
             ))
             

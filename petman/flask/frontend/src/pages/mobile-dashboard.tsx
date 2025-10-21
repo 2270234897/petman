@@ -195,13 +195,14 @@ export function MobileDashboard() {
             <Package className="h-6 w-6 mb-2 text-purple-500" />
             <span className="text-sm font-medium">库存管理</span>
           </Link>
-          <Link
+          {/* AI features disabled - moved to archive */}
+          {/* <Link
             to="/image-recognition"
             className="flex flex-col items-center justify-center p-4 rounded-lg border bg-card hover:bg-accent transition-colors active:scale-95"
           >
             <Package className="h-6 w-6 mb-2 text-orange-500" />
             <span className="text-sm font-medium">图像识别</span>
-          </Link>
+          </Link> */}
         </div>
       </div>
 

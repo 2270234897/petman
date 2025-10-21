@@ -18,13 +18,14 @@ import {
 
 const navigation = [
   { name: "仪表板", href: "/", icon: Home },
-  { name: "🌐 智能搜索建商品", href: "/smart-search", icon: Search },
+  // AI features disabled - moved to archive
+  // { name: "🌐 智能搜索建商品", href: "/smart-search", icon: Search },
   { name: "宠物管理", href: "/pets", icon: Heart },
   { name: "客户管理", href: "/customers", icon: Users },
   { name: "预约管理", href: "/appointments", icon: Calendar },
   { name: "库存管理", href: "/inventory", icon: Package },
-  { name: "AI 商品助手", href: "/agent-assistant", icon: Sparkles },
-  { name: "图片识别", href: "/image-recognition", icon: Camera },
+  // { name: "AI 商品助手", href: "/agent-assistant", icon: Sparkles },
+  // { name: "图片识别", href: "/image-recognition", icon: Camera },
   { name: "系统设置", href: "/settings", icon: Settings },
 ]
 
