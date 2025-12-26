@@ -1,0 +1,94 @@
+# ============================================
+# 根目录 .gitignore
+# PetMan 项目 Git 忽略文件
+# ============================================
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Python 虚拟环境
+venv/
+env/
+ENV/
+.venv
+
+# Node.js 依赖
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json.bak
+
+# 构建输出
+dist/
+build/
+*.egg-info/
+
+# 环境变量和配置文件（敏感信息）
+.env
+.env.local
+.env.production
+.env.development
+*.env
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件和压缩包
+*.zip
+*.tar.gz
+*.rar
+*.bak
+*.backup
+*.old
+backend.zip
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# 上传的文件
+uploads/
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.pdf
+
+# 测试文件
+test_*.py
+*_test.py
+*.test.js
+*.test.ts
+*.test.tsx
+
+# 数据库临时文件
+*.db
+*.sqlite
+*.sqlite3
+temp_*.sql
+test_*.sql
+
+# 前端构建输出（可选，如果不想提交构建文件）
+# frontend/dist/
+# frontend/build/
+
