@@ -1,9 +1,0 @@
-#python==3.12.6
-
-#requests==2.32.3
-
-fastapi==0.116.1
-uvicorn==0.35.0
-gunicorn==23.0.0
-mysql-connector-python==9.3.0
-pyqt5==5.15.11
